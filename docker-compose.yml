@@ -1,0 +1,21 @@
+version: '3.8'
+
+services:
+  api-server:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: device_api_server
+    ports:
+      - "8080:8080"
+    env_file:
+      - .env
+    environment:
+      # Override thêm nếu cần
+      - SPRING_PROFILES_ACTIVE=default
+      - TZ=Asia/Ho_Chi_Minh
+    restart: unless-stopped
+    volumes:
+      # Mount thư mục để lưu trữ các file tạm hoặc logs nếu cần
+      - ./logs:/app/logs
+
