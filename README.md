@@ -400,3 +400,534 @@ Xóa ảnh khỏi cả Azure Blob Storage và Database. Server tự phát hiện
   }
   ```
 
+---
+## cập nhật 08/05/2026
+
+## 📂 9. Danh mục Thiết bị (CRUD)
+Quản lý danh mục thiết bị (ví dụ: "Thiết bị điện", "Thiết bị cơ khí"...).
+
+> **Phân quyền:**
+> - `GET` — Tất cả user đã đăng nhập
+> - `POST`, `PUT`, `DELETE` — Chỉ **ADMIN** và **THỦ KHO**
+
+### 9.1. Lấy tất cả danh mục
+- **URL:** `GET /api/danh-muc`
+- **Headers:** `Authorization: Bearer <token>`
+- **Response (200 OK):**
+  ```json
+  {
+      "success": true,
+      "message": "Success",
+      "data": [
+          {
+              "danhMucId": 1,
+              "tenDanhMuc": "Thiết bị điện"
+          },
+          {
+              "danhMucId": 2,
+              "tenDanhMuc": "Thiết bị cơ khí"
+          }
+      ]
+  }
+  ```
+
+### 9.2. Lấy 1 danh mục theo ID
+- **URL:** `GET /api/danh-muc/{id}`
+- **Headers:** `Authorization: Bearer <token>`
+- **Ví dụ:** `GET /api/danh-muc/1`
+- **Response (200 OK):**
+  ```json
+  {
+      "success": true,
+      "message": "Success",
+      "data": {
+          "danhMucId": 1,
+          "tenDanhMuc": "Thiết bị điện"
+      }
+  }
+  ```
+
+### 9.3. Tạo danh mục mới (Admin, Thủ kho)
+- **URL:** `POST /api/danh-muc`
+- **Headers:** `Authorization: Bearer <token>`
+- **Body (JSON):**
+  ```json
+  {
+      "tenDanhMuc": "Thiết bị đo lường"
+  }
+  ```
+- **Response (200 OK):**
+  ```json
+  {
+      "success": true,
+      "message": "Tạo danh mục thành công",
+      "data": {
+          "danhMucId": 3,
+          "tenDanhMuc": "Thiết bị đo lường"
+      }
+  }
+  ```
+
+### 9.4. Cập nhật danh mục (Admin, Thủ kho)
+- **URL:** `PUT /api/danh-muc/{id}`
+- **Headers:** `Authorization: Bearer <token>`
+- **Body (JSON):**
+  ```json
+  {
+      "tenDanhMuc": "Thiết bị điện tử"
+  }
+  ```
+- **Response (200 OK):**
+  ```json
+  {
+      "success": true,
+      "message": "Cập nhật danh mục thành công",
+      "data": {
+          "danhMucId": 1,
+          "tenDanhMuc": "Thiết bị điện tử"
+      }
+  }
+  ```
+
+### 9.5. Xóa danh mục (Admin, Thủ kho)
+- **URL:** `DELETE /api/danh-muc/{id}`
+- **Headers:** `Authorization: Bearer <token>`
+- **Response (200 OK):**
+  ```json
+  {
+      "success": true,
+      "message": "Đã xóa danh mục ID: 1"
+  }
+  ```
+
+---
+
+## 🏷️ 10. Loại Thiết bị (CRUD + Tìm kiếm)
+Quản lý loại thiết bị cụ thể trong mỗi danh mục (ví dụ: "Máy phát điện 50KVA", "Máy khoan bê tông"...).
+
+> **Phân quyền:**
+> - `GET` — Tất cả user đã đăng nhập
+> - `POST`, `PUT`, `DELETE` — Chỉ **ADMIN** và **THỦ KHO**
+
+### 10.1. Lấy tất cả loại thiết bị (có thể lọc theo danh mục)
+- **URL:** `GET /api/loai-thiet-bi`
+- **URL (lọc theo danh mục):** `GET /api/loai-thiet-bi?danhMucId={id}`
+- **Headers:** `Authorization: Bearer <token>`
+- **Query Params (tùy chọn):**
+
+  | Param | Bắt buộc | Mô tả |
+  |-------|----------|-------|
+  | danhMucId | ❌ | Lọc loại thiết bị theo danh mục. Nếu không truyền → lấy tất cả |
+
+- **Ví dụ:** `GET /api/loai-thiet-bi?danhMucId=1`
+- **Response (200 OK):**
+  ```json
+  {
+      "success": true,
+      "message": "Success",
+      "data": [
+          {
+              "loaiThietBiId": 1,
+              "danhMucId": 1,
+              "nhaCungCapId": 2,
+              "tenLoaiThietBi": "Máy phát điện 50KVA",
+              "thongSoKyThuat": "Công suất: 50KVA, Nhiên liệu: Diesel",
+              "giaThueThamKhao": 5000000.00,
+              "anhDaiDien": "https://mediaserverproject.blob.core.windows.net/products/abc.jpg"
+          }
+      ]
+  }
+  ```
+
+### 10.2. Lấy chi tiết 1 loại thiết bị
+- **URL:** `GET /api/loai-thiet-bi/{id}`
+- **Headers:** `Authorization: Bearer <token>`
+- **Ví dụ:** `GET /api/loai-thiet-bi/1`
+
+### 10.3. Tìm kiếm loại thiết bị theo tên
+- **URL:** `GET /api/loai-thiet-bi/search?q={keyword}`
+- **Headers:** `Authorization: Bearer <token>`
+- **Ví dụ:** `GET /api/loai-thiet-bi/search?q=máy phát`
+- **Response (200 OK):** Trả về danh sách `LoaiThietBi` có tên chứa keyword.
+
+### 10.4. Tạo loại thiết bị mới (Admin, Thủ kho)
+- **URL:** `POST /api/loai-thiet-bi`
+- **Headers:** `Authorization: Bearer <token>`
+- **Body (JSON):**
+  ```json
+  {
+      "danhMucId": 1,
+      "nhaCungCapId": 2,
+      "tenLoaiThietBi": "Máy phát điện 100KVA",
+      "thongSoKyThuat": "Công suất: 100KVA, Nhiên liệu: Diesel",
+      "giaThueThamKhao": 8000000.00,
+      "anhDaiDien": "https://mediaserverproject.blob.core.windows.net/products/xyz.jpg"
+  }
+  ```
+- **Response (200 OK):**
+  ```json
+  {
+      "success": true,
+      "message": "Tạo loại thiết bị thành công",
+      "data": {
+          "loaiThietBiId": 5,
+          "danhMucId": 1,
+          "nhaCungCapId": 2,
+          "tenLoaiThietBi": "Máy phát điện 100KVA",
+          "thongSoKyThuat": "Công suất: 100KVA, Nhiên liệu: Diesel",
+          "giaThueThamKhao": 8000000.00,
+          "anhDaiDien": "https://mediaserverproject.blob.core.windows.net/products/xyz.jpg"
+      }
+  }
+  ```
+
+### 10.5. Cập nhật loại thiết bị (Admin, Thủ kho)
+- **URL:** `PUT /api/loai-thiet-bi/{id}`
+- **Headers:** `Authorization: Bearer <token>`
+- **Body (JSON):** Tương tự body tạo mới (10.4), truyền các trường cần cập nhật.
+
+### 10.6. Xóa loại thiết bị (Admin, Thủ kho)
+- **URL:** `DELETE /api/loai-thiet-bi/{id}`
+- **Headers:** `Authorization: Bearer <token>`
+- **Response (200 OK):**
+  ```json
+  {
+      "success": true,
+      "message": "Đã xóa loại thiết bị ID: 5"
+  }
+  ```
+
+---
+
+## 🏭 11. Nhà Cung Cấp
+Tra cứu thông tin nhà cung cấp thiết bị.
+
+> **Phân quyền:** `GET` — Tất cả user đã đăng nhập
+
+### 11.1. Lấy tất cả nhà cung cấp
+- **URL:** `GET /api/nha-cung-cap`
+- **Headers:** `Authorization: Bearer <token>`
+- **Response (200 OK):**
+  ```json
+  {
+      "success": true,
+      "message": "Success",
+      "data": [
+          {
+              "nhaCungCapId": 1,
+              "tenNhaCungCap": "Công ty TNHH ABC",
+              "nguoiLienHe": "Nguyễn Văn A",
+              "soDienThoai": "0901234567",
+              "diaChi": "123 Đường ABC, Q.1, TP.HCM"
+          },
+          {
+              "nhaCungCapId": 2,
+              "tenNhaCungCap": "Công ty CP XYZ",
+              "nguoiLienHe": "Trần Thị B",
+              "soDienThoai": "0987654321",
+              "diaChi": "456 Đường XYZ, Q.7, TP.HCM"
+          }
+      ]
+  }
+  ```
+
+### 11.2. Lấy 1 nhà cung cấp theo ID
+- **URL:** `GET /api/nha-cung-cap/{id}`
+- **Headers:** `Authorization: Bearer <token>`
+- **Ví dụ:** `GET /api/nha-cung-cap/1`
+- **Response (200 OK):**
+  ```json
+  {
+      "success": true,
+      "message": "Success",
+      "data": {
+          "nhaCungCapId": 1,
+          "tenNhaCungCap": "Công ty TNHH ABC",
+          "nguoiLienHe": "Nguyễn Văn A",
+          "soDienThoai": "0901234567",
+          "diaChi": "123 Đường ABC, Q.1, TP.HCM"
+      }
+  }
+  ```
+
+---
+
+## 🖥️ 12. Thiết bị (CRUD mở rộng)
+Ngoài API tra cứu (mục 6), hệ thống còn có các endpoint quản lý thiết bị.
+
+> **Phân quyền:**
+> - `GET` — Tất cả user đã đăng nhập
+> - `POST`, `PUT`, `DELETE` — Chỉ **ADMIN** và **THỦ KHO**
+
+### 12.1. Lấy danh sách thiết bị (có thể lọc theo loại)
+- **URL:** `GET /api/thiet-bi`
+- **URL (lọc theo loại):** `GET /api/thiet-bi?loaiThietBiId={id}`
+- **Headers:** `Authorization: Bearer <token>`
+- **Query Params (tùy chọn):**
+
+  | Param | Bắt buộc | Mô tả |
+  |-------|----------|-------|
+  | loaiThietBiId | ❌ | Lọc thiết bị theo loại. Nếu không truyền → lấy tất cả (raw entity) |
+
+- **Ví dụ:** `GET /api/thiet-bi?loaiThietBiId=1`
+- **Response khi có `loaiThietBiId` (200 OK):** Trả về DTO gộp dữ liệu từ ThietBi + TinhTrang + Kho
+  ```json
+  {
+      "success": true,
+      "message": "Success",
+      "data": [
+          {
+              "thietBiId": 1,
+              "maTaiSan": "MK-001",
+              "tinhTrangId": 1,
+              "tenTinhTrang": "Sẵn sàng",
+              "khoHienTaiId": 1,
+              "tenKho": "Kho A",
+              "ngayBaoTriTiepTheo": "2026-06-15T00:00:00"
+          }
+      ]
+  }
+  ```
+- **Response khi không có `loaiThietBiId` (200 OK):** Trả về raw entity
+  ```json
+  {
+      "success": true,
+      "message": "Success",
+      "data": [
+          {
+              "thietBiId": 1,
+              "loaiThietBiId": 1,
+              "maTaiSan": "MK-001",
+              "tinhTrangId": 1,
+              "khoHienTaiId": 1,
+              "ngayBaoTriTiepTheo": "2026-06-15T00:00:00"
+          }
+      ]
+  }
+  ```
+
+### 12.2. Tạo thiết bị mới (Admin, Thủ kho)
+- **URL:** `POST /api/thiet-bi`
+- **Headers:** `Authorization: Bearer <token>`
+- **Body (JSON):**
+  ```json
+  {
+      "loaiThietBiId": 1,
+      "maTaiSan": "MK-005",
+      "tinhTrangId": 1,
+      "khoHienTaiId": 1,
+      "ngayBaoTriTiepTheo": "2026-07-01T00:00:00"
+  }
+  ```
+- **Response (200 OK):**
+  ```json
+  {
+      "success": true,
+      "message": "Tao thiet bi thanh cong",
+      "data": {
+          "thietBiId": 5,
+          "loaiThietBiId": 1,
+          "maTaiSan": "MK-005",
+          "tinhTrangId": 1,
+          "khoHienTaiId": 1,
+          "ngayBaoTriTiepTheo": "2026-07-01T00:00:00"
+      }
+  }
+  ```
+
+### 12.3. Xóa thiết bị (Admin, Thủ kho)
+- **URL:** `DELETE /api/thiet-bi/{id}`
+- **Headers:** `Authorization: Bearer <token>`
+- **Response (200 OK):**
+  ```json
+  {
+      "success": true,
+      "message": "Da xoa thiet bi ID: 5"
+  }
+  ```
+
+---
+
+## 🛒 13. Giỏ hàng (Cart API)
+Quản lý giỏ hàng tạm cho Khách hàng. Sau khi tạo hợp đồng thuê thành công, giỏ hàng sẽ được xóa.
+
+> **Phân quyền:** Tất cả endpoints — Chỉ **KHÁCH HÀNG** (`VaiTroID = 4`)
+>
+> **Xác thực:** Tất cả endpoints yêu cầu JWT Token trong Header: `Authorization: Bearer <token>`
+>
+> **Lưu ý:** Nếu thêm trùng `loaiThietBiId` đã có trong giỏ → hệ thống tự cộng dồn số lượng.
+
+### 13.1. Lấy danh sách giỏ hàng
+Lấy tất cả items trong giỏ hàng của user đang đăng nhập (xác định qua JWT).
+- **URL:** `GET /api/gio-hang`
+- **Headers:** `Authorization: Bearer <token>`
+- **Response (200 OK):**
+  ```json
+  {
+      "success": true,
+      "message": "Success",
+      "data": [
+          {
+              "gioHangId": 1,
+              "loaiThietBiId": 3,
+              "tenLoaiThietBi": "Máy phát điện 50KVA",
+              "anhDaiDien": "https://mediaserverproject.blob.core.windows.net/products/abc.jpg",
+              "giaThueThamKhao": 5000000.00,
+              "soLuong": 2,
+              "thanhTien": 10000000.00,
+              "ngayThem": "2026-05-08T15:30:00"
+          },
+          {
+              "gioHangId": 2,
+              "loaiThietBiId": 7,
+              "tenLoaiThietBi": "Máy khoan bê tông",
+              "anhDaiDien": "https://mediaserverproject.blob.core.windows.net/products/xyz.jpg",
+              "giaThueThamKhao": 3000000.00,
+              "soLuong": 1,
+              "thanhTien": 3000000.00,
+              "ngayThem": "2026-05-08T14:00:00"
+          }
+      ]
+  }
+  ```
+
+### 13.2. Thêm item vào giỏ hàng
+Thêm loại thiết bị vào giỏ. Nếu loại thiết bị đã tồn tại trong giỏ → **cộng dồn** số lượng.
+- **URL:** `POST /api/gio-hang`
+- **Headers:** `Authorization: Bearer <token>`
+- **Body (JSON):**
+  ```json
+  {
+      "loaiThietBiId": 3,
+      "soLuong": 1
+  }
+  ```
+  | Trường | Bắt buộc | Validate | Mô tả |
+  |--------|----------|---------|-------|
+  | loaiThietBiId | ✅ | NOT NULL | ID loại thiết bị muốn thuê |
+  | soLuong | ✅ | >= 1 | Số lượng cần thuê |
+
+- **Response (200 OK):**
+  ```json
+  {
+      "success": true,
+      "message": "Đã thêm vào giỏ hàng",
+      "data": {
+          "gioHangId": 1,
+          "loaiThietBiId": 3,
+          "tenLoaiThietBi": "Máy phát điện 50KVA",
+          "anhDaiDien": "https://mediaserverproject.blob.core.windows.net/products/abc.jpg",
+          "giaThueThamKhao": 5000000.00,
+          "soLuong": 1,
+          "thanhTien": 5000000.00,
+          "ngayThem": "2026-05-08T15:30:00"
+      }
+  }
+  ```
+- **Lỗi (404):** Nếu `loaiThietBiId` không tồn tại: `"Loại thiết bị ID 999 không tồn tại"`
+
+### 13.3. Cập nhật số lượng
+Thay đổi số lượng của 1 item trong giỏ hàng.
+- **URL:** `PUT /api/gio-hang/{id}`
+- **Headers:** `Authorization: Bearer <token>`
+- **Path Variable:** `id` = GioHangID
+- **Body (JSON):**
+  ```json
+  {
+      "soLuong": 3
+  }
+  ```
+- **Response (200 OK):**
+  ```json
+  {
+      "success": true,
+      "message": "Cập nhật số lượng thành công",
+      "data": {
+          "gioHangId": 1,
+          "loaiThietBiId": 3,
+          "tenLoaiThietBi": "Máy phát điện 50KVA",
+          "anhDaiDien": "https://mediaserverproject.blob.core.windows.net/products/abc.jpg",
+          "giaThueThamKhao": 5000000.00,
+          "soLuong": 3,
+          "thanhTien": 15000000.00,
+          "ngayThem": "2026-05-08T15:30:00"
+      }
+  }
+  ```
+- **Lỗi (403):** Nếu item không thuộc user hiện tại: `"Bạn không có quyền cập nhật item này"`
+- **Lỗi (404):** Nếu `id` không tồn tại: `"Không tìm thấy item giỏ hàng ID: 99"`
+
+### 13.4. Xóa item khỏi giỏ hàng
+- **URL:** `DELETE /api/gio-hang/{id}`
+- **Headers:** `Authorization: Bearer <token>`
+- **Path Variable:** `id` = GioHangID
+- **Response (200 OK):**
+  ```json
+  {
+      "success": true,
+      "message": "Đã xóa khỏi giỏ hàng"
+  }
+  ```
+- **Lỗi (403):** Nếu item không thuộc user hiện tại: `"Bạn không có quyền xóa item này"`
+
+### 13.5. Đếm tổng items (Badge)
+Đếm tổng số lượng thiết bị trong giỏ (SUM số lượng), dùng cho badge icon giỏ hàng.
+- **URL:** `GET /api/gio-hang/count`
+- **Headers:** `Authorization: Bearer <token>`
+- **Response (200 OK):**
+  ```json
+  {
+      "success": true,
+      "message": "Success",
+      "data": 5
+  }
+  ```
+  > `data` = tổng `SUM(soLuong)` của tất cả items. Trả về `0` nếu giỏ trống.
+
+---
+
+## 📋 Tổng hợp tất cả Endpoints
+
+| # | Method | Endpoint | Mô tả | Quyền |
+|---|--------|----------|-------|-------|
+| 1 | POST | `/api/auth/login` | Đăng nhập | Public |
+| 2 | POST | `/api/auth/register-init` | Đăng ký - Bước 1 (gửi OTP) | Public |
+| 3 | POST | `/api/auth/register-confirm` | Đăng ký - Bước 2 (xác nhận OTP) | Public |
+| 4 | POST | `/api/auth/forgot-password-init` | Quên MK - Bước 1 | Public |
+| 5 | POST | `/api/auth/forgot-password-confirm` | Quên MK - Bước 2 | Public |
+| 6 | POST | `/api/auth/doi-mat-khau` | Đổi mật khẩu | Authenticated |
+| 7 | GET | `/api/auth/me` | Lấy thông tin cá nhân | Authenticated |
+| 8 | GET | `/api/dashboard` | Dashboard Admin | Authenticated |
+| 9 | GET | `/api/danh-muc` | Lấy tất cả danh mục | Authenticated |
+| 10 | GET | `/api/danh-muc/{id}` | Lấy 1 danh mục | Authenticated |
+| 11 | POST | `/api/danh-muc` | Tạo danh mục | ADMIN, THỦ KHO |
+| 12 | PUT | `/api/danh-muc/{id}` | Cập nhật danh mục | ADMIN, THỦ KHO |
+| 13 | DELETE | `/api/danh-muc/{id}` | Xóa danh mục | ADMIN, THỦ KHO |
+| 14 | GET | `/api/loai-thiet-bi` | Lấy tất cả loại TB | Authenticated |
+| 15 | GET | `/api/loai-thiet-bi/{id}` | Lấy chi tiết loại TB | Authenticated |
+| 16 | GET | `/api/loai-thiet-bi/search?q=` | Tìm kiếm loại TB | Authenticated |
+| 17 | POST | `/api/loai-thiet-bi` | Tạo loại TB | ADMIN, THỦ KHO |
+| 18 | PUT | `/api/loai-thiet-bi/{id}` | Cập nhật loại TB | ADMIN, THỦ KHO |
+| 19 | DELETE | `/api/loai-thiet-bi/{id}` | Xóa loại TB | ADMIN, THỦ KHO |
+| 20 | GET | `/api/nha-cung-cap` | Lấy tất cả NCC | Authenticated |
+| 21 | GET | `/api/nha-cung-cap/{id}` | Lấy 1 NCC | Authenticated |
+| 22 | GET | `/api/thiet-bi` | Lấy danh sách thiết bị | Authenticated |
+| 23 | GET | `/api/thiet-bi/tra-cuu/{maTaiSan}` | Tra cứu thiết bị theo mã | Authenticated |
+| 24 | POST | `/api/thiet-bi` | Tạo thiết bị | ADMIN, THỦ KHO |
+| 25 | DELETE | `/api/thiet-bi/{id}` | Xóa thiết bị | ADMIN, THỦ KHO |
+| 26 | POST | `/api/thong-bao` | Tạo thông báo | Authenticated |
+| 27 | GET | `/api/thong-bao` | Lấy DS thông báo | Authenticated |
+| 28 | GET | `/api/thong-bao/chua-doc` | Đếm thông báo chưa đọc | Authenticated |
+| 29 | PUT | `/api/thong-bao/{id}/da-doc` | Đánh dấu đã đọc | Authenticated |
+| 30 | POST | `/api/fcm/register-token` | Đăng ký FCM Token | Authenticated |
+| 31 | GET | `/api/images/{category}/get-upload-url` | Lấy SAS URL upload ảnh | ADMIN, THỦ KHO |
+| 32 | POST | `/api/images/user/update-avatar` | Cập nhật avatar | ADMIN, THỦ KHO |
+| 33 | POST | `/api/images/products/thiet-bi/{id}/update-image` | Lưu ảnh sản phẩm | ADMIN, THỦ KHO |
+| 34 | POST | `/api/images/work/thiet-bi/{id}/update-image` | Lưu ảnh nghiệp vụ | ADMIN, THỦ KHO |
+| 35 | DELETE | `/api/images/{hinhAnhId}` | Xóa ảnh | ADMIN, THỦ KHO |
+| 36 | GET | `/api/gio-hang` | Lấy DS giỏ hàng | KHÁCH HÀNG |
+| 37 | POST | `/api/gio-hang` | Thêm item vào giỏ | KHÁCH HÀNG |
+| 38 | PUT | `/api/gio-hang/{id}` | Cập nhật số lượng | KHÁCH HÀNG |
+| 39 | DELETE | `/api/gio-hang/{id}` | Xóa item khỏi giỏ | KHÁCH HÀNG |
+| 40 | GET | `/api/gio-hang/count` | Đếm tổng items (badge) | KHÁCH HÀNG |
+

@@ -31,8 +31,6 @@ dependencies {
     // Azure Blob Storage SDK — dùng cho upload ảnh qua SAS Token
     implementation 'com.azure:azure-storage-blob:12.24.0'
 
-    // Spring Dotenv — load .env file automatically
-    implementation 'me.paulschwarz:spring-dotenv:4.0.0'
 
     // Spring Boot Starters
     implementation 'org.springframework.boot:spring-boot-starter-data-jpa'

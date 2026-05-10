@@ -29,5 +29,10 @@ public interface ThietBiRepository extends JpaRepository<ThietBi, Integer> {
     @Query("SELECT tb FROM ThietBi tb " +
            "WHERE CAST(tb.ngayBaoTriTiepTheo AS date) = CAST(:today AS date)")
     List<ThietBi> findThietBiCanBaoTriHomNay(@Param("today") LocalDateTime today);
+
+    /**
+     * Lọc thiết bị theo loại thiết bị
+     */
+    List<ThietBi> findByLoaiThietBiId(Integer loaiThietBiId);
 }
 

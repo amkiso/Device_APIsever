@@ -1,6 +1,7 @@
 package com.example.device_apisever.controller;
 
 import com.example.device_apisever.dto.ApiResponse;
+import com.example.device_apisever.dto.ThietBiByLoaiDTO;
 import com.example.device_apisever.dto.ThietBiDetailResponse;
 import com.example.device_apisever.entity.ThietBi;
 import com.example.device_apisever.service.ThietBiService;
@@ -20,7 +21,14 @@ public class ThietBiController {
     }
 
     @GetMapping
-    public ResponseEntity<ApiResponse<List<ThietBi>>> getAll() {
+    public ResponseEntity<?> getAll(
+            @RequestParam(required = false) Integer loaiThietBiId) {
+        if (loaiThietBiId != null) {
+            // Lọc thiết bị theo loại → trả về DTO có tên kho, tên tình trạng
+            List<ThietBiByLoaiDTO> result = thietBiService.findByLoaiThietBiId(loaiThietBiId);
+            return ResponseEntity.ok(ApiResponse.ok(result));
+        }
+        // Lấy tất cả thiết bị (raw entity)
         return ResponseEntity.ok(ApiResponse.ok(thietBiService.findAll()));
     }
 

@@ -37,6 +37,27 @@ public class SecurityConfig {
                 .requestMatchers("/api/auth/login", "/api/auth/register-init", "/api/auth/register-confirm", "/api/auth/forgot-password-init", "/api/auth/forgot-password-confirm").permitAll()
                 .requestMatchers("/swagger-ui/**", "/v3/api-docs/**", "/swagger-ui.html").permitAll()
                 .requestMatchers("/error").permitAll()
+                // Danh mục: GET cho tất cả user đã đăng nhập, CUD chỉ ADMIN, THU_KHO
+                .requestMatchers(org.springframework.http.HttpMethod.GET, "/api/danh-muc/**").authenticated()
+                .requestMatchers(org.springframework.http.HttpMethod.POST, "/api/danh-muc/**").hasAnyRole("ADMIN", "THU_KHO")
+                .requestMatchers(org.springframework.http.HttpMethod.PUT, "/api/danh-muc/**").hasAnyRole("ADMIN", "THU_KHO")
+                .requestMatchers(org.springframework.http.HttpMethod.DELETE, "/api/danh-muc/**").hasAnyRole("ADMIN", "THU_KHO")
+                // Loại thiết bị: GET cho tất cả, CUD chỉ ADMIN, THU_KHO
+                .requestMatchers(org.springframework.http.HttpMethod.GET, "/api/loai-thiet-bi/**").authenticated()
+                .requestMatchers(org.springframework.http.HttpMethod.POST, "/api/loai-thiet-bi/**").hasAnyRole("ADMIN", "THU_KHO")
+                .requestMatchers(org.springframework.http.HttpMethod.PUT, "/api/loai-thiet-bi/**").hasAnyRole("ADMIN", "THU_KHO")
+                .requestMatchers(org.springframework.http.HttpMethod.DELETE, "/api/loai-thiet-bi/**").hasAnyRole("ADMIN", "THU_KHO")
+                // Thiết bị: GET cho tất cả, CUD chỉ ADMIN, THU_KHO
+                .requestMatchers(org.springframework.http.HttpMethod.GET, "/api/thiet-bi/**").authenticated()
+                .requestMatchers(org.springframework.http.HttpMethod.POST, "/api/thiet-bi/**").hasAnyRole("ADMIN", "THU_KHO")
+                .requestMatchers(org.springframework.http.HttpMethod.PUT, "/api/thiet-bi/**").hasAnyRole("ADMIN", "THU_KHO")
+                .requestMatchers(org.springframework.http.HttpMethod.DELETE, "/api/thiet-bi/**").hasAnyRole("ADMIN", "THU_KHO")
+                // Ảnh: chỉ ADMIN, THU_KHO mới có quyền upload/xóa
+                .requestMatchers("/api/images/**").hasAnyRole("ADMIN", "THU_KHO")
+                // Nhà cung cấp: chỉ GET
+                .requestMatchers(org.springframework.http.HttpMethod.GET, "/api/nha-cung-cap/**").authenticated()
+                // Giỏ hàng: chỉ Khách hàng mới có quyền
+                .requestMatchers("/api/gio-hang/**").hasRole("KHACH_HANG")
                 .anyRequest().authenticated()
             )
             .addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter.class);

@@ -7,11 +7,11 @@ import java.time.LocalDateTime;
 /**
  * Giỏ hàng tạm cho Khách hàng (VaiTroID=4).
  * Xóa sau khi tạo hợp đồng thành công.
- * UNIQUE(NguoiDungID, ThietBiID) — không thêm trùng thiết bị.
+ * UNIQUE(NguoiDungID, LoaiThietBiID) — không thêm trùng loại thiết bị.
  */
 @Entity
 @Table(name = "GioHang", uniqueConstraints = {
-    @UniqueConstraint(columnNames = {"NguoiDungID", "ThietBiID"})
+    @UniqueConstraint(columnNames = {"NguoiDungID", "LoaiThietBiID"})
 })
 @Getter @Setter @NoArgsConstructor @AllArgsConstructor @Builder
 public class GioHang {
@@ -24,8 +24,11 @@ public class GioHang {
     @Column(name = "NguoiDungID", nullable = false)
     private Integer nguoiDungId;
 
-    @Column(name = "ThietBiID", nullable = false)
-    private Integer thietBiId;
+    @Column(name = "LoaiThietBiID", nullable = false)
+    private Integer loaiThietBiId;
+
+    @Column(name = "SoLuong", nullable = false)
+    private Integer soLuong;
 
     @Column(name = "NgayThem", nullable = false, updatable = false)
     private LocalDateTime ngayThem;
@@ -33,5 +36,6 @@ public class GioHang {
     @PrePersist
     protected void onCreate() {
         if (ngayThem == null) ngayThem = LocalDateTime.now();
+        if (soLuong == null) soLuong = 1;
     }
 }

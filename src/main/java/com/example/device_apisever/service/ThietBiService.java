@@ -20,6 +20,7 @@ public class ThietBiService {
     private final TinhTrangThietBiRepository tinhTrangThietBiRepository;
     private final KhoRepository khoRepository;
     private final HinhAnhThietBiRepository hinhAnhThietBiRepository;
+    private final LoaiThietBiService loaiThietBiService;
 
     public ThietBiService(ThietBiRepository thietBiRepository,
                           LoaiThietBiRepository loaiThietBiRepository,
@@ -27,7 +28,8 @@ public class ThietBiService {
                           NhaCungCapRepository nhaCungCapRepository,
                           TinhTrangThietBiRepository tinhTrangThietBiRepository,
                           KhoRepository khoRepository,
-                          HinhAnhThietBiRepository hinhAnhThietBiRepository) {
+                          HinhAnhThietBiRepository hinhAnhThietBiRepository,
+                          LoaiThietBiService loaiThietBiService) {
         this.thietBiRepository = thietBiRepository;
         this.loaiThietBiRepository = loaiThietBiRepository;
         this.danhMucThietBiRepository = danhMucThietBiRepository;
@@ -35,6 +37,7 @@ public class ThietBiService {
         this.tinhTrangThietBiRepository = tinhTrangThietBiRepository;
         this.khoRepository = khoRepository;
         this.hinhAnhThietBiRepository = hinhAnhThietBiRepository;
+        this.loaiThietBiService = loaiThietBiService;
     }
 
     // 1. Lấy tất cả thiết bị
@@ -125,7 +128,7 @@ public class ThietBiService {
                 .tenLoaiThietBi(loai != null ? loai.getTenLoaiThietBi() : null)
                 .thongSoKyThuat(loai != null ? loai.getThongSoKyThuat() : null)
                 .giaThueThamKhao(loai != null ? loai.getGiaThueThamKhao() : null)
-                .anhDaiDien(loai != null ? loai.getAnhDaiDien() : null)
+                .anhDaiDien(loai != null ? loaiThietBiService.getFullImageUrl(loai.getAnhDaiDien()) : null)
                 // Danh mục
                 .danhMucId(danhMucId)
                 .tenDanhMuc(tenDanhMuc)
@@ -142,5 +145,39 @@ public class ThietBiService {
                 // Hình ảnh
                 .hinhAnhs(hinhAnhInfos)
                 .build();
+    }
+
+    /**
+     * 6. Lấy danh sách thiết bị cụ thể (serial) theo loại thiết bị.
+     * Gộp dữ liệu từ: ThietBi, TinhTrangThietBi, Kho.
+     * Dùng cho: GET /api/thiet-bi?loaiThietBiId={id}
+     */
+    public List<com.example.device_apisever.dto.ThietBiByLoaiDTO> findByLoaiThietBiId(Integer loaiThietBiId) {
+        List<ThietBi> thietBis = thietBiRepository.findByLoaiThietBiId(loaiThietBiId);
+        return thietBis.stream().map(tb -> {
+            // Lấy tên tình trạng
+            String tenTinhTrang = null;
+            TinhTrangThietBi tt = tinhTrangThietBiRepository.findById(tb.getTinhTrangId()).orElse(null);
+            if (tt != null) {
+                tenTinhTrang = tt.getTenTinhTrang();
+            }
+
+            // Lấy tên kho
+            String tenKho = null;
+            Kho kho = khoRepository.findById(tb.getKhoHienTaiId()).orElse(null);
+            if (kho != null) {
+                tenKho = kho.getTenKho();
+            }
+
+            return com.example.device_apisever.dto.ThietBiByLoaiDTO.builder()
+                    .thietBiId(tb.getThietBiId())
+                    .maTaiSan(tb.getMaTaiSan())
+                    .tinhTrangId(tb.getTinhTrangId())
+                    .tenTinhTrang(tenTinhTrang)
+                    .khoHienTaiId(tb.getKhoHienTaiId())
+                    .tenKho(tenKho)
+                    .ngayBaoTriTiepTheo(tb.getNgayBaoTriTiepTheo())
+                    .build();
+        }).collect(Collectors.toList());
     }
 }
