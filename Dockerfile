@@ -1,27 +1,13 @@
-# Stage 1: Build the application
-FROM gradle:latest AS builder
+# Chỉ sử dụng môi trường JRE Java 25 siêu nhẹ để chạy, KHÔNG build lại
+FROM eclipse-temurin:25-jre-alpine
+
 WORKDIR /app
 
-# Copy gradle wrapper and project files
-COPY gradlew .
-COPY gradle gradle
-COPY build.gradle settings.gradle ./
-COPY src src
+# Copy file app.jar (đã được GitHub Actions build và gửi sang) vào container
+COPY app.jar app.jar
 
-# Make gradlew executable and build the project (skip tests to speed up)
-RUN chmod +x gradlew
-RUN ./gradlew build -x test --no-daemon
-
-# Stage 2: Run the application
-# Sử dụng openjdk:latest để đảm bảo tương thích với Java 25 như cấu hình trong build.gradle
-FROM openjdk:latest
-WORKDIR /app
-
-# Copy built JAR from the builder stage
-COPY --from=builder /app/build/libs/*-SNAPSHOT.jar app.jar
-
-# Expose the application port
+# Mở cổng API
 EXPOSE 8080
 
-# Run the application
+# Chạy ứng dụng
 ENTRYPOINT ["java", "-jar", "app.jar"]
