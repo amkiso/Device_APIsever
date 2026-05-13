@@ -885,6 +885,101 @@ Thay đổi số lượng của 1 item trong giỏ hàng.
   > `data` = tổng `SUM(soLuong)` của tất cả items. Trả về `0` nếu giỏ trống.
 
 ---
+## cập nhật 13/05/2026
+
+## 📱 14. QR Code Thiết bị
+
+API tạo và quản lý QR code cho từng thiết bị. QR code chứa mã định danh thiết bị theo format `DEVICE:<maTaiSan>`, được lưu dạng ảnh PNG trên server.
+
+> **Phân quyền:** `GET` — Tất cả user đã đăng nhập
+>
+> **Lưu ý:** Ảnh QR chỉ được tạo 1 lần. Các lần gọi tiếp theo sẽ trả về ảnh đã tạo trước đó.
+
+### Flow hoạt động
+
+```
+┌──────────┐  1. GET /api/thiet-bi/{id}/qr-code   ┌──────────┐
+│  Client  │ ────────────────────────────────────► │  Server  │
+│  (App)   │                                       │ (Spring) │
+│          │  2. Kiểm tra JWT + quyền truy cập     │          │
+│          │  3. Tìm thiết bị theo ID               │          │
+│          │  4. Kiểm tra QR đã tồn tại?            │          │
+│          │     ┌─ CÓ  → trả URL ảnh cũ           │          │
+│          │     └─ CHƯA → tạo QR mới              │          │
+│          │        → lưu PNG vào /uploads/qrcode/  │          │
+│          │        → cập nhật DB (QrCodeUrl)        │          │
+│          │ ◄──────────────────────────────────── │          │
+│          │  5. Trả về JSON chứa qrCodeUrl         │          │
+└──────────┘                                       └──────────┘
+```
+
+### 14.1. Lấy / Tạo QR code cho thiết bị
+- **URL:** `GET /api/thiet-bi/{id}/qr-code`
+- **Headers:** `Authorization: Bearer <token>`
+- **Path Variable:** `id` = ThietBiID
+- **Ví dụ:** `GET /api/thiet-bi/5/qr-code`
+- **Response (200 OK) — Lần đầu (tạo mới):**
+  ```json
+  {
+      "success": true,
+      "message": "Lay QR code thanh cong",
+      "data": {
+          "thietBiId": 5,
+          "maTaiSan": "TB001",
+          "qrContent": "DEVICE:TB001",
+          "qrCodeUrl": "/uploads/qrcode/TB001.png"
+      }
+  }
+  ```
+- **Response (200 OK) — Lần sau (đã có):**
+  ```json
+  {
+      "success": true,
+      "message": "Lay QR code thanh cong",
+      "data": {
+          "thietBiId": 5,
+          "maTaiSan": "TB001",
+          "qrContent": "DEVICE:TB001",
+          "qrCodeUrl": "/uploads/qrcode/TB001.png"
+      }
+  }
+  ```
+- **Lỗi (404):** Nếu thiết bị không tồn tại: `"Khong tim thay thiet bi voi ID: 999"`
+- **Lỗi (400):** Nếu lỗi tạo QR: `"Khong the tao QR code: ..."`
+
+### 14.2. Truy cập ảnh QR trực tiếp (Static File)
+Sau khi nhận `qrCodeUrl`, client có thể truy cập ảnh QR trực tiếp qua URL:
+- **URL:** `GET {baseUrl}/uploads/qrcode/{maTaiSan}.png`
+- **Ví dụ:** `GET http://localhost:8080/uploads/qrcode/TB001.png`
+- **Yêu cầu Security:** Không cần Token (Public)
+- **Response:** Ảnh PNG
+
+### QR Content Format
+| Thành phần | Giá trị | Ví dụ |
+|------------|---------|-------|
+| Prefix | `DEVICE:` | Cố định |
+| Mã tài sản | `maTaiSan` của thiết bị | `TB001` |
+| **Full content** | `DEVICE:<maTaiSan>` | `DEVICE:TB001` |
+
+### Thông số kỹ thuật QR
+| Thuộc tính | Giá trị |
+|------------|---------|
+| Kích thước | 400 x 400 px |
+| Format | PNG |
+| Error Correction | Level H (30%) |
+| Character Set | UTF-8 |
+| Margin | 2 modules |
+| Thư mục lưu trữ | `uploads/qrcode/` |
+
+### Migration Database
+Trước khi sử dụng, cần chạy script SQL để thêm cột `QrCodeUrl` vào bảng `ThietBi`:
+```sql
+ALTER TABLE ThietBi
+ADD QrCodeUrl NVARCHAR(500) NULL;
+```
+> File migration: `src/main/resources/sql/migrate_qrcode.sql`
+
+---
 
 ## 📋 Tổng hợp tất cả Endpoints
 
@@ -913,21 +1008,22 @@ Thay đổi số lượng của 1 item trong giỏ hàng.
 | 21 | GET | `/api/nha-cung-cap/{id}` | Lấy 1 NCC | Authenticated |
 | 22 | GET | `/api/thiet-bi` | Lấy danh sách thiết bị | Authenticated |
 | 23 | GET | `/api/thiet-bi/tra-cuu/{maTaiSan}` | Tra cứu thiết bị theo mã | Authenticated |
-| 24 | POST | `/api/thiet-bi` | Tạo thiết bị | ADMIN, THỦ KHO |
-| 25 | DELETE | `/api/thiet-bi/{id}` | Xóa thiết bị | ADMIN, THỦ KHO |
-| 26 | POST | `/api/thong-bao` | Tạo thông báo | Authenticated |
-| 27 | GET | `/api/thong-bao` | Lấy DS thông báo | Authenticated |
-| 28 | GET | `/api/thong-bao/chua-doc` | Đếm thông báo chưa đọc | Authenticated |
-| 29 | PUT | `/api/thong-bao/{id}/da-doc` | Đánh dấu đã đọc | Authenticated |
-| 30 | POST | `/api/fcm/register-token` | Đăng ký FCM Token | Authenticated |
-| 31 | GET | `/api/images/{category}/get-upload-url` | Lấy SAS URL upload ảnh | ADMIN, THỦ KHO |
-| 32 | POST | `/api/images/user/update-avatar` | Cập nhật avatar | ADMIN, THỦ KHO |
-| 33 | POST | `/api/images/products/thiet-bi/{id}/update-image` | Lưu ảnh sản phẩm | ADMIN, THỦ KHO |
-| 34 | POST | `/api/images/work/thiet-bi/{id}/update-image` | Lưu ảnh nghiệp vụ | ADMIN, THỦ KHO |
-| 35 | DELETE | `/api/images/{hinhAnhId}` | Xóa ảnh | ADMIN, THỦ KHO |
-| 36 | GET | `/api/gio-hang` | Lấy DS giỏ hàng | KHÁCH HÀNG |
-| 37 | POST | `/api/gio-hang` | Thêm item vào giỏ | KHÁCH HÀNG |
-| 38 | PUT | `/api/gio-hang/{id}` | Cập nhật số lượng | KHÁCH HÀNG |
-| 39 | DELETE | `/api/gio-hang/{id}` | Xóa item khỏi giỏ | KHÁCH HÀNG |
-| 40 | GET | `/api/gio-hang/count` | Đếm tổng items (badge) | KHÁCH HÀNG |
-
+| 24 | GET | `/api/thiet-bi/{id}/qr-code` | Lấy/Tạo QR code thiết bị | Authenticated |
+| 25 | POST | `/api/thiet-bi` | Tạo thiết bị | ADMIN, THỦ KHO |
+| 26 | DELETE | `/api/thiet-bi/{id}` | Xóa thiết bị | ADMIN, THỦ KHO |
+| 27 | POST | `/api/thong-bao` | Tạo thông báo | Authenticated |
+| 28 | GET | `/api/thong-bao` | Lấy DS thông báo | Authenticated |
+| 29 | GET | `/api/thong-bao/chua-doc` | Đếm thông báo chưa đọc | Authenticated |
+| 30 | PUT | `/api/thong-bao/{id}/da-doc` | Đánh dấu đã đọc | Authenticated |
+| 31 | POST | `/api/fcm/register-token` | Đăng ký FCM Token | Authenticated |
+| 32 | GET | `/api/images/{category}/get-upload-url` | Lấy SAS URL upload ảnh | ADMIN, THỦ KHO |
+| 33 | POST | `/api/images/user/update-avatar` | Cập nhật avatar | ADMIN, THỦ KHO |
+| 34 | POST | `/api/images/products/thiet-bi/{id}/update-image` | Lưu ảnh sản phẩm | ADMIN, THỦ KHO |
+| 35 | POST | `/api/images/work/thiet-bi/{id}/update-image` | Lưu ảnh nghiệp vụ | ADMIN, THỦ KHO |
+| 36 | DELETE | `/api/images/{hinhAnhId}` | Xóa ảnh | ADMIN, THỦ KHO |
+| 37 | GET | `/api/gio-hang` | Lấy DS giỏ hàng | KHÁCH HÀNG |
+| 38 | POST | `/api/gio-hang` | Thêm item vào giỏ | KHÁCH HÀNG |
+| 39 | PUT | `/api/gio-hang/{id}` | Cập nhật số lượng | KHÁCH HÀNG |
+| 40 | DELETE | `/api/gio-hang/{id}` | Xóa item khỏi giỏ | KHÁCH HÀNG |
+| 41 | GET | `/api/gio-hang/count` | Đếm tổng items (badge) | KHÁCH HÀNG |
+| — | GET | `/uploads/qrcode/{file}.png` | Truy cập ảnh QR (static) | Public |

@@ -28,4 +28,7 @@ public class ThietBi {
 
     @Column(name = "NgayBaoTriTiepTheo")
     private LocalDateTime ngayBaoTriTiepTheo;
+
+    @Column(name = "QrCodeUrl", length = 500)
+    private String qrCodeUrl;
 }

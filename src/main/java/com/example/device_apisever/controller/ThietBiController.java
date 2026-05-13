@@ -1,9 +1,11 @@
 package com.example.device_apisever.controller;
 
 import com.example.device_apisever.dto.ApiResponse;
+import com.example.device_apisever.dto.QrCodeResponse;
 import com.example.device_apisever.dto.ThietBiByLoaiDTO;
 import com.example.device_apisever.dto.ThietBiDetailResponse;
 import com.example.device_apisever.entity.ThietBi;
+import com.example.device_apisever.service.QrCodeService;
 import com.example.device_apisever.service.ThietBiService;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -15,9 +17,11 @@ import java.util.List;
 public class ThietBiController {
 
     private final ThietBiService thietBiService;
+    private final QrCodeService qrCodeService;
 
-    public ThietBiController(ThietBiService thietBiService) {
+    public ThietBiController(ThietBiService thietBiService, QrCodeService qrCodeService) {
         this.thietBiService = thietBiService;
+        this.qrCodeService = qrCodeService;
     }
 
     @GetMapping
@@ -40,6 +44,32 @@ public class ThietBiController {
     public ResponseEntity<ApiResponse<ThietBiDetailResponse>> traCuuTheoMa(@PathVariable String maTaiSan) {
         ThietBiDetailResponse detail = thietBiService.findDetailByMaTaiSan(maTaiSan);
         return ResponseEntity.ok(ApiResponse.ok(detail));
+    }
+
+    /**
+     * Lấy hoặc tạo QR code cho thiết bị.
+     * - Nếu đã có ảnh QR → trả về đường dẫn ảnh cũ.
+     * - Nếu chưa có → tạo QR mới, lưu file, cập nhật DB, trả về đường dẫn.
+     *
+     * QR content format: DEVICE:<maTaiSan>
+     *
+     * Ví dụ: GET /api/thiet-bi/5/qr-code
+     */
+    @GetMapping("/{id}/qr-code")
+    public ResponseEntity<ApiResponse<QrCodeResponse>> getQrCode(@PathVariable Integer id) {
+        String qrUrl = qrCodeService.getOrCreateQrCode(id);
+
+        // Lấy thông tin thiết bị để build response
+        ThietBi tb = thietBiService.findById(id).orElse(null);
+
+        QrCodeResponse response = QrCodeResponse.builder()
+                .thietBiId(id)
+                .maTaiSan(tb != null ? tb.getMaTaiSan() : null)
+                .qrContent("DEVICE:" + (tb != null ? tb.getMaTaiSan() : ""))
+                .qrCodeUrl(qrUrl)
+                .build();
+
+        return ResponseEntity.ok(ApiResponse.ok("Lay QR code thanh cong", response));
     }
 
     @PostMapping

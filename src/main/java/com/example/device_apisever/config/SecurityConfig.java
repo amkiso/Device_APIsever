@@ -37,6 +37,8 @@ public class SecurityConfig {
                 .requestMatchers("/api/auth/login", "/api/auth/register-init", "/api/auth/register-confirm", "/api/auth/forgot-password-init", "/api/auth/forgot-password-confirm").permitAll()
                 .requestMatchers("/swagger-ui/**", "/v3/api-docs/**", "/swagger-ui.html").permitAll()
                 .requestMatchers("/error").permitAll()
+                // Static QR code images — cho phép truy cập ảnh QR không cần xác thực
+                .requestMatchers("/uploads/qrcode/**").permitAll()
                 // Danh mục: GET cho tất cả user đã đăng nhập, CUD chỉ ADMIN, THU_KHO
                 .requestMatchers(org.springframework.http.HttpMethod.GET, "/api/danh-muc/**").authenticated()
                 .requestMatchers(org.springframework.http.HttpMethod.POST, "/api/danh-muc/**").hasAnyRole("ADMIN", "THU_KHO")

@@ -1,0 +1,12 @@
+# Sử dụng base image là openjdk tương thích với ứng dụng
+FROM openjdk:latest
+WORKDIR /app
+
+# Copy file app.jar mà GitHub Actions đã build và gửi qua SCP
+COPY app.jar app.jar
+
+# Mở port 8080
+EXPOSE 8080
+
+# Chạy file jar
+ENTRYPOINT ["java", "-jar", "app.jar"]
