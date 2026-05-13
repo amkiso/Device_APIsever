@@ -42,7 +42,7 @@ jobs:
           port: 22
           source: "deploy_files/*"
           # Đường dẫn thật trên Azure của bạn
-          target: "/home/hoangvux/api-server"
+          target: "/home/hoangvuxlogin/api-server"
           strip_components: 1
 
       - name: SSH vào server và Deploy
