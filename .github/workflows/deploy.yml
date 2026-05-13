@@ -53,7 +53,7 @@ jobs:
           key: ${{ secrets.SSH_PRIVATE_KEY }}
           port: 22
           script: |
-            cd /home/hoangvux/api-server
+            cd /home/hoangvuxlogin/api-server
             docker-compose down
             docker-compose build
             docker-compose up -d
