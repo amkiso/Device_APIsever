@@ -3,42 +3,36 @@ name: Deploy to Server
 on:
   push:
     branches:
-      - main # Chạy workflow mỗi khi có code mới push lên nhánh main
+      - main
 
 jobs:
   build-and-deploy:
     runs-on: ubuntu-latest
 
     steps:
-      # Bước 1: Lấy mã nguồn từ repository
       - name: Checkout mã nguồn
         uses: actions/checkout@v4
 
-      # Bước 2: Thiết lập môi trường Java JDK 17
       - name: Thiết lập môi trường Java JDK 17
         uses: actions/setup-java@v4
         with:
           java-version: '17'
           distribution: 'temurin'
-          cache: 'gradle' # Tối ưu hóa thời gian build bằng cách cache các dependencies của Gradle
+          cache: 'gradle'
 
-      # Bước 3: Cấp quyền thực thi cho Gradle Wrapper và tiến hành build dự án tạo ra file .jar
       - name: Build dự án bằng Gradle
         run: |
           chmod +x ./gradlew
           ./gradlew bootJar
 
-      # Bước Chuẩn bị: Gom các file cần thiết vào 1 thư mục riêng để SCP gọn gàng hơn
       - name: Chuẩn bị các file để gửi lên Server
         run: |
           mkdir -p deploy_files
-          # Copy file .jar (do Spring Boot tạo ra) và đổi tên thành app.jar
           cp build/libs/*.jar deploy_files/app.jar
-          # Copy các file cấu hình Docker (Sử dụng Dockerfile.prod để tối ưu deploy)
-          cp Dockerfile.prod deploy_files/Dockerfile
+          # Sửa lại từ Dockerfile.prod thành Dockerfile cho đúng file bạn đang có
+          cp Dockerfile deploy_files/
           cp docker-compose.yml deploy_files/
 
-      # Bước 4: Sử dụng SCP để gửi file .jar, Dockerfile và docker-compose.yml lên server
       - name: Gửi file lên server qua SCP
         uses: appleboy/scp-action@v0.1.7
         with:
@@ -47,12 +41,10 @@ jobs:
           key: ${{ secrets.SSH_PRIVATE_KEY }}
           port: 22
           source: "deploy_files/*"
-          # Đích đến trên server (LƯU Ý: Bạn cần đổi "/path/to/deploy/folder" thành đường dẫn thật trên server của bạn)
-          target: "/path/to/deploy/folder"
-          # Strip thư mục "deploy_files" để các file nằm trực tiếp trong target folder
+          # Đường dẫn thật trên Azure của bạn
+          target: "/home/hoangvux/api-server"
           strip_components: 1
 
-      # Bước 5: SSH vào server và thực thi các lệnh Docker Compose
       - name: SSH vào server và Deploy
         uses: appleboy/ssh-action@v1.0.3
         with:
@@ -61,18 +53,8 @@ jobs:
           key: ${{ secrets.SSH_PRIVATE_KEY }}
           port: 22
           script: |
-            # 1. Di chuyển vào thư mục chứa các file vừa được gửi lên
-            # (Nhớ đổi đường dẫn này trùng với target ở Bước 4)
-            cd /path/to/deploy/folder
-            
-            # 2. Tắt và xóa các container/network cũ đang chạy
+            cd /home/hoangvux/api-server
             docker-compose down
-            
-            # 3. Build lại Docker image mới (từ Dockerfile và file app.jar mới)
             docker-compose build
-            
-            # 4. Khởi động lại container ở chế độ chạy ngầm (detached mode)
             docker-compose up -d
-            
-            # 5. (Tùy chọn) Dọn dẹp các image "lơ lửng" không còn dùng để giải phóng ổ cứng
             docker image prune -f
