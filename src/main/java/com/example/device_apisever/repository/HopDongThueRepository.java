@@ -59,13 +59,14 @@ public interface HopDongThueRepository extends JpaRepository<HopDongThue, Intege
 
     /**
      * Lấy N hợp đồng gần nhất của khách hàng (cho label trang chủ)
+     * Sử dụng Pageable để giới hạn số lượng kết quả
      */
-    @Query(value = "SELECT TOP :limit hd.* FROM HopDongThue hd " +
-           "WHERE hd.NguoiDungKhachID = :nguoiDungId " +
-           "ORDER BY hd.NgayLap DESC", nativeQuery = true)
+    @Query("SELECT hd FROM HopDongThue hd " +
+           "WHERE hd.nguoiDungKhachId = :nguoiDungId " +
+           "ORDER BY hd.ngayLap DESC")
     List<HopDongThue> findTopNByNguoiDungKhachId(
             @Param("nguoiDungId") Integer nguoiDungId,
-            @Param("limit") int limit);
+            org.springframework.data.domain.Pageable pageable);
 
     /**
      * Đếm hợp đồng theo trạng thái của 1 khách hàng

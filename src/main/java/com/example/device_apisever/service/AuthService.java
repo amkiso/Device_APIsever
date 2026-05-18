@@ -73,6 +73,11 @@ public class AuthService {
                 .map(VaiTro::getTenVaiTro)
                 .orElse("Unknown");
 
+        String avtUrl = null;
+        if (nd.getAvt() != null && !nd.getAvt().isBlank()) {
+            avtUrl = "https://mediaserverproject.blob.core.windows.net/user/" + nd.getAvt();
+        }
+
         return LoginResponse.builder()
                 .token(token)
                 .nguoiDungId(nd.getNguoiDungId())
@@ -82,6 +87,7 @@ public class AuthService {
                 .tenVaiTro(tenVaiTro)
                 .khoId(nd.getKhoId())
                 .doiMatKhauLanDau(nd.getDoiMatKhauLanDau())
+                .avt(avtUrl)
                 .build();
     }
 
@@ -164,6 +170,7 @@ public class AuthService {
                 .tenVaiTro("Khách hàng")
                 .khoId(null)
                 .doiMatKhauLanDau(false)
+                .avt(null)
                 .build();
     }
 

@@ -314,7 +314,8 @@ public class HopDongService {
     public List<HopDongSummaryResponse> getRecentContracts(String taiKhoan, int limit) {
         NguoiDung khach = resolveNguoiDung(taiKhoan);
         List<HopDongThue> contracts = hopDongRepo
-                .findTopNByNguoiDungKhachId(khach.getNguoiDungId(), limit);
+                .findTopNByNguoiDungKhachId(khach.getNguoiDungId(),
+                        org.springframework.data.domain.PageRequest.of(0, limit));
 
         return contracts.stream().map(hd -> {
             long soTB = chiTietRepo.countByHopDongId(hd.getHopDongId());
