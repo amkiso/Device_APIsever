@@ -12,14 +12,21 @@ jobs:
     steps:
       - name: Checkout mã nguồn
         uses: actions/checkout@v4
-
-      - name: Thiết lập môi trường Java JDK 17
+    
+      - name: Thiết lập môi trường Java JDK 25
         uses: actions/setup-java@v4
         with:
-          java-version: '17'
+          java-version: '25'
           distribution: 'temurin'
           cache: 'gradle'
-
+      - name: Tạo file Firebase Key
+        env:
+          FIREBASE_JSON_KEY: ${{ secrets.FIREBASE_JSON_KEY }}
+        run: |
+          # Đảm bảo thư mục resources tồn tại
+          mkdir -p src/main/resources
+          # Ghi nội dung từ Secret vào file
+          echo "$FIREBASE_JSON_KEY" > src/main/resources/serviceAccountKey.json
       - name: Build dự án bằng Gradle
         run: |
           chmod +x ./gradlew
@@ -28,8 +35,8 @@ jobs:
       - name: Chuẩn bị các file để gửi lên Server
         run: |
           mkdir -p deploy_files
-          cp build/libs/*.jar deploy_files/app.jar
-          # Sửa lại từ Dockerfile.prod thành Dockerfile cho đúng file bạn đang có
+          # Chỉ copy duy nhất file JAR sinh ra, Dockerfile và docker-compose.yml
+          cp build/libs/*-SNAPSHOT.jar deploy_files/app.jar
           cp Dockerfile deploy_files/
           cp docker-compose.yml deploy_files/
 
@@ -41,7 +48,6 @@ jobs:
           key: ${{ secrets.SSH_PRIVATE_KEY }}
           port: 22
           source: "deploy_files/*"
-          # Đường dẫn thật trên Azure của bạn
           target: "/home/hoangvuxlogin/api-server"
           strip_components: 1
 
@@ -54,7 +60,15 @@ jobs:
           port: 22
           script: |
             cd /home/hoangvuxlogin/api-server
+            
+            # Tắt container cũ
             docker-compose down
-            docker-compose build
+            
+            # Xóa image cũ để tiết kiệm dung lượng server
+            docker image prune -a -f
+            
+            # Build lại image mới (chỉ mất vài giây vì chỉ copy file jar)
+            docker-compose build --no-cache
+            
+            # Khởi động lại
             docker-compose up -d
-            docker image prune -f
