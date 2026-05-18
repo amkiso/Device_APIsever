@@ -1,0 +1,70 @@
+package com.example.device_apisever.controller;
+
+import com.example.device_apisever.dto.*;
+import com.example.device_apisever.service.HopDongService;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.validation.Valid;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
+import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.Authentication;
+import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
+
+@RestController
+@RequestMapping("/api/hop-dong")
+public class HopDongController {
+
+    private final HopDongService hopDongService;
+
+    public HopDongController(HopDongService hopDongService) {
+        this.hopDongService = hopDongService;
+    }
+
+    /**
+     * POST /api/hop-dong/tao — Tạo hợp đồng mới từ checkout
+     */
+    @PostMapping("/tao")
+    public ResponseEntity<ApiResponse<HopDongResponse>> taoHopDong(
+            Authentication auth,
+            @Valid @RequestBody TaoHopDongRequest request) {
+        HopDongResponse res = hopDongService.taoHopDong(auth.getName(), request);
+        return ResponseEntity.status(HttpStatus.CREATED)
+                .body(ApiResponse.ok("Tạo hợp đồng thành công", res));
+    }
+
+    /**
+     * POST /api/hop-dong/{id}/ky-ket — Ký hợp đồng điện tử
+     */
+    @PostMapping(value = "/{id}/ky-ket", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    public ResponseEntity<ApiResponse<KyHopDongResponse>> kyHopDong(
+            Authentication auth,
+            @PathVariable Integer id,
+            @RequestParam("chuKy") MultipartFile chuKy,
+            @RequestParam("maPin") String maPin,
+            HttpServletRequest httpRequest) {
+        try {
+            String ip = httpRequest.getRemoteAddr();
+            String device = httpRequest.getHeader("User-Agent");
+            byte[] chuKyData = chuKy.getBytes();
+
+            KyHopDongResponse res = hopDongService.kyHopDong(
+                    auth.getName(), id, chuKyData, maPin, ip, device);
+            return ResponseEntity.ok(ApiResponse.ok("Ký hợp đồng thành công", res));
+        } catch (Exception e) {
+            return ResponseEntity.badRequest()
+                    .body(ApiResponse.error("Lỗi ký hợp đồng: " + e.getMessage()));
+        }
+    }
+
+    /**
+     * POST /api/hop-dong/{id}/xac-nhan-thanh-toan — Callback xác nhận thanh toán
+     */
+    @PostMapping("/{id}/xac-nhan-thanh-toan")
+    public ResponseEntity<ApiResponse<XacNhanThanhToanResponse>> xacNhanThanhToan(
+            @PathVariable Integer id,
+            @Valid @RequestBody XacNhanThanhToanRequest request) {
+        XacNhanThanhToanResponse res = hopDongService.xacNhanThanhToan(id, request);
+        return ResponseEntity.ok(ApiResponse.ok("Xác nhận thanh toán thành công", res));
+    }
+}

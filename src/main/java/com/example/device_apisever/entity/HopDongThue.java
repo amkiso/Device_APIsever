@@ -60,6 +60,43 @@ public class HopDongThue {
     @Column(name = "GhiChu", length = 500)
     private String ghiChu;
 
+    // ── Mở rộng cho thanh toán online & hợp đồng điện tử ──
+    @Column(name = "DiaChiGiaoID")
+    private Integer diaChiGiaoId;
+
+    @Column(name = "PhuongThucThanhToan")
+    private Integer phuongThucThanhToan;
+
+    @Column(name = "ThueVAT", precision = 18, scale = 2)
+    private BigDecimal thueVat;
+
+    @Column(name = "PhiTreHanPhanTram", precision = 5, scale = 2)
+    private BigDecimal phiTreHanPhanTram;
+
+    @Column(name = "SoNgayTreHanMoiKy")
+    private Integer soNgayTreHanMoiKy;
+
+    @Column(name = "SoNgayViPhamChamDut")
+    private Integer soNgayViPhamChamDut;
+
+    @Column(name = "PhiVeSinhChuyenSau", precision = 18, scale = 2)
+    private BigDecimal phiVeSinhChuyenSau;
+
+    @Column(name = "KhauHaoHaoMonNam", precision = 18, scale = 2)
+    private BigDecimal khauHaoHaoMonNam;
+
+    @Column(name = "PhiGianDoanPhanTram", precision = 5, scale = 2)
+    private BigDecimal phiGianDoanPhanTram;
+
+    @Column(name = "GhiChuKhachHang", length = 500)
+    private String ghiChuKhachHang;
+
+    @Column(name = "NgayKyDienTu")
+    private LocalDateTime ngayKyDienTu;
+
+    @Column(name = "MaPinXacNhan", length = 255)
+    private String maPinXacNhan;
+
     @PrePersist
     protected void onCreate() {
         if (ngayLap == null) ngayLap = LocalDateTime.now();
@@ -68,5 +105,11 @@ public class HopDongThue {
         if (phiBoiThuong == null) phiBoiThuong = BigDecimal.ZERO;
         if (trangThaiId == null) trangThaiId = 1;
         if (nguonTao == null) nguonTao = 2;
+        if (thueVat == null) thueVat = BigDecimal.ZERO;
+        if (phiTreHanPhanTram == null) phiTreHanPhanTram = new BigDecimal("3.0");
+        if (soNgayTreHanMoiKy == null) soNgayTreHanMoiKy = 3;
+        if (soNgayViPhamChamDut == null) soNgayViPhamChamDut = 15;
+        if (phiVeSinhChuyenSau == null) phiVeSinhChuyenSau = new BigDecimal("1000000");
+        if (phiGianDoanPhanTram == null) phiGianDoanPhanTram = new BigDecimal("50.0");
     }
 }

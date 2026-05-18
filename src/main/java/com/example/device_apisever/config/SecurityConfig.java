@@ -60,6 +60,14 @@ public class SecurityConfig {
                 .requestMatchers(org.springframework.http.HttpMethod.GET, "/api/nha-cung-cap/**").authenticated()
                 // Giỏ hàng: chỉ Khách hàng mới có quyền
                 .requestMatchers("/api/gio-hang/**").hasRole("KHACH_HANG")
+                // Địa chỉ giao hàng: chỉ Khách hàng
+                .requestMatchers("/api/dia-chi/**").hasRole("KHACH_HANG")
+                // Hợp đồng: tạo & ký chỉ Khách hàng, callback thanh toán authenticated
+                .requestMatchers("/api/hop-dong/tao").hasRole("KHACH_HANG")
+                .requestMatchers("/api/hop-dong/*/ky-ket").hasRole("KHACH_HANG")
+                .requestMatchers("/api/hop-dong/*/xac-nhan-thanh-toan").authenticated()
+                // Điều khoản mẫu: tất cả user đã đăng nhập
+                .requestMatchers(org.springframework.http.HttpMethod.GET, "/api/dieu-khoan-mau/**").authenticated()
                 .anyRequest().authenticated()
             )
             .addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter.class);

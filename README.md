@@ -980,6 +980,253 @@ ADD QrCodeUrl NVARCHAR(500) NULL;
 > File migration: `src/main/resources/sql/migrate_qrcode.sql`
 
 ---
+## cập nhật 16/05/2026
+
+## 📍 15. Địa chỉ Giao hàng (Delivery Address)
+Quản lý nhiều địa chỉ giao hàng cho khách hàng (Bệnh viện, Phòng khám, Nhà riêng...).
+
+> **Phân quyền:** Tất cả endpoints — Chỉ **KHÁCH HÀNG** (`VaiTroID = 4`)
+
+### 15.1. Lấy danh sách địa chỉ
+- **URL:** `GET /api/dia-chi`
+- **Headers:** `Authorization: Bearer <token>`
+- **Response (200 OK):**
+  ```json
+  {
+      "success": true,
+      "data": [
+          {
+              "diaChiId": 1,
+              "tenNguoiNhan": "BS. Trọng (Trưởng khoa HSTC)",
+              "soDienThoai": "0903123456",
+              "tinhThanhPho": "TP. Hồ Chí Minh",
+              "phuongXa": "Phường 12",
+              "diaChiChiTiet": "201B Nguyễn Chí Thanh, Quận 5",
+              "donVi": "Bệnh viện Chợ Rẫy - Khoa ICU",
+              "loaiDiaChi": 2,
+              "laMacDinh": true
+          }
+      ]
+  }
+  ```
+
+### 15.2. Tạo địa chỉ mới
+- **URL:** `POST /api/dia-chi`
+- **Headers:** `Authorization: Bearer <token>`
+- **Body (JSON):**
+  ```json
+  {
+      "tenNguoiNhan": "BS. Trọng",
+      "soDienThoai": "0903123456",
+      "tinhThanhPho": "TP. Hồ Chí Minh",
+      "phuongXa": "Phường 12",
+      "diaChiChiTiet": "201B Nguyễn Chí Thanh, Quận 5",
+      "donVi": "Bệnh viện Chợ Rẫy",
+      "loaiDiaChi": 2,
+      "laMacDinh": true
+  }
+  ```
+  | Trường | Bắt buộc | Mô tả |
+  |--------|----------|-------|
+  | tenNguoiNhan | ✅ | Tên người nhận hàng |
+  | soDienThoai | ✅ | SĐT liên hệ |
+  | tinhThanhPho | ✅ | Tỉnh/Thành phố |
+  | phuongXa | ✅ | Phường/Xã |
+  | diaChiChiTiet | ✅ | Số nhà, đường |
+  | donVi | ❌ | Bệnh viện/Phòng khám/Khoa |
+  | loaiDiaChi | ✅ | 1=Nhà riêng, 2=Văn phòng/BV |
+  | laMacDinh | ❌ | Đặt làm địa chỉ mặc định |
+
+### 15.3. Cập nhật địa chỉ
+- **URL:** `PUT /api/dia-chi/{id}`
+- **Headers:** `Authorization: Bearer <token>`
+- **Body (JSON):** Tương tự 15.2
+
+### 15.4. Xóa địa chỉ
+- **URL:** `DELETE /api/dia-chi/{id}`
+- **Headers:** `Authorization: Bearer <token>`
+
+---
+
+## 📝 16. Hợp đồng Thuê — Checkout & E-Contract
+
+Module checkout cho phép khách hàng tạo hợp đồng thuê, ký điện tử, và thanh toán.
+
+> **Vòng đời hợp đồng mới:**
+> Chờ ký kết(1) → Đã ký - Chờ thanh toán(2) → Đã thanh toán - Chờ phê duyệt(3) → Đã phê duyệt - Chờ giao hàng(4) → Đang cho thuê(5)
+> Nhánh lỗi: Quá hạn thanh toán(6) → Vi phạm - Chấm dứt(7)
+> Kết thúc: Đã trả thiết bị(8) → Đã hoàn tất(9) | Đã hủy(10)
+
+### 16.1. Tạo hợp đồng (Checkout)
+Tạo hợp đồng mới từ giỏ hàng. Tự động xóa giỏ hàng sau khi tạo thành công.
+- **URL:** `POST /api/hop-dong/tao`
+- **Headers:** `Authorization: Bearer <token>`
+- **Quyền:** KHÁCH HÀNG
+- **Body (JSON):**
+  ```json
+  {
+      "diaChiGiaoId": 1,
+      "phuongThucThanhToan": 1,
+      "ngayBatDauThue": "2026-04-16",
+      "soThangThue": 12,
+      "ghiChuKhachHang": "Giao giờ hành chính",
+      "danhSachThietBi": [
+          { "thietBiId": 5, "soLuong": 1 }
+      ]
+  }
+  ```
+  | Trường | Bắt buộc | Mô tả |
+  |--------|----------|-------|
+  | diaChiGiaoId | ✅ | ID địa chỉ giao hàng |
+  | phuongThucThanhToan | ✅ | 1=MoMo, 2=ZaloPay, 3=Tiền mặt |
+  | ngayBatDauThue | ✅ | Ngày bắt đầu thuê (yyyy-MM-dd) |
+  | soThangThue | ✅ | Số tháng thuê (≥1) |
+  | ghiChuKhachHang | ❌ | Lời nhắn cho Shop |
+  | danhSachThietBi | ✅ | Danh sách thiết bị + số lượng |
+
+- **Response (201 Created):**
+  ```json
+  {
+      "success": true,
+      "message": "Tạo hợp đồng thành công",
+      "data": {
+          "hopDongId": 145,
+          "maHopDong": "HD-2026-00145",
+          "trangThai": "Chờ ký kết",
+          "chiTietThietBi": [
+              {
+                  "tenThietBi": "Máy thở chức năng cao VELA",
+                  "soSerial": "MT-001",
+                  "tinhTrangBanGiao": "Máy hoạt động bình thường...",
+                  "mucDichSuDung": "Phục vụ điều trị bệnh nhân",
+                  "giaTriMay": 300000000,
+                  "giaThueThang": 1500000,
+                  "ngayKiemDinh": "2026-04-01"
+              }
+          ],
+          "chiPhi": {
+              "tongTienThue": 18000000,
+              "tienCoc": 9000000,
+              "thueVAT": 1800000,
+              "phiTreHanPhanTram": 3.0,
+              "soNgayTreHanMoiKy": 3,
+              "soNgayViPhamChamDut": 15,
+              "phiVeSinhChuyenSau": 1000000,
+              "khauHaoHaoMonNam": null,
+              "phiGianDoanPhanTram": 50.0
+          }
+      }
+  }
+  ```
+
+### 16.2. Ký hợp đồng điện tử
+Ký hợp đồng bằng chữ ký điện tử + mã PIN 6 số.
+- **URL:** `POST /api/hop-dong/{id}/ky-ket`
+- **Headers:** `Authorization: Bearer <token>`
+- **Quyền:** KHÁCH HÀNG
+- **Content-Type:** `multipart/form-data`
+
+  | Field | Type | Mô tả |
+  |-------|------|-------|
+  | chuKy | File (PNG) | Ảnh chữ ký từ signature pad |
+  | maPin | String | Mã PIN 6 số |
+
+- **Response (200 OK):**
+  ```json
+  {
+      "success": true,
+      "data": {
+          "hopDongId": 145,
+          "trangThai": "Đã ký - Chờ thanh toán",
+          "ngayKy": "2026-04-16T10:30:00",
+          "urlThanhToan": null
+      }
+  }
+  ```
+
+### 16.3. Xác nhận Thanh toán (Callback)
+Callback xác nhận thanh toán thành công từ cổng MoMo/ZaloPay.
+- **URL:** `POST /api/hop-dong/{id}/xac-nhan-thanh-toan`
+- **Headers:** `Authorization: Bearer <token>`
+- **Quyền:** Authenticated
+- **Body (JSON):**
+  ```json
+  {
+      "maGiaoDich": "MOMO_TX_12345",
+      "soTien": 9000000,
+      "trangThai": 1,
+      "phuongThuc": 1
+  }
+  ```
+  | Trường | Mô tả |
+  |--------|-------|
+  | maGiaoDich | Mã giao dịch từ cổng thanh toán |
+  | soTien | Số tiền đã thanh toán |
+  | trangThai | 0=Pending, 1=Success, 2=Failed, 3=Refunded |
+  | phuongThuc | 1=MoMo, 2=ZaloPay, 3=Tiền mặt |
+
+- **Response (200 OK):**
+  ```json
+  {
+      "success": true,
+      "data": {
+          "hopDongId": 145,
+          "trangThai": "Đã thanh toán - Chờ phê duyệt",
+          "maGiaoDich": "MOMO_TX_12345"
+      }
+  }
+  ```
+
+---
+
+## 📜 17. Điều khoản Mẫu Hợp đồng
+Lấy toàn bộ 6 điều khoản mẫu để hiển thị trên hợp đồng.
+
+> **Phân quyền:** `GET` — Tất cả user đã đăng nhập
+
+### 17.1. Lấy tất cả điều khoản mẫu
+- **URL:** `GET /api/dieu-khoan-mau`
+- **Headers:** `Authorization: Bearer <token>`
+- **Response (200 OK):**
+  ```json
+  {
+      "success": true,
+      "data": [
+          {
+              "soDieu": 1,
+              "tieuDe": "THÔNG TIN THIẾT BỊ THUÊ",
+              "noiDung": "Bên A đồng ý cho Bên B thuê thiết bị..."
+          },
+          {
+              "soDieu": 2,
+              "tieuDe": "CHI PHÍ, THỜI GIAN THUÊ VÀ THANH TOÁN",
+              "noiDung": "..."
+          }
+      ]
+  }
+  ```
+
+---
+
+## 🗄️ 18. Database Migration — Module Checkout
+
+Trước khi sử dụng các API mới, cần chạy script SQL migration:
+> File migration: `src/main/resources/sql/migrate_checkout.sql`
+
+### Thay đổi CSDL:
+| Loại | Bảng | Mô tả |
+|------|------|-------|
+| ALTER | `NguoiDung` | Thêm CCCD, CccdNgayCap, CccdNoiCap, DonViCongTac |
+| ALTER | `ThietBi` | Thêm SoSerial, MucDichSuDung, GiaTriMay, NgayKiemDinh, TinhTrangBanGiao |
+| ALTER | `HopDongThue` | Thêm 12 cột cho thanh toán online & e-contract |
+| CREATE | `DiaChiGiaoHang` | Quản lý nhiều địa chỉ giao hàng |
+| CREATE | `ThanhToan` | Lịch sử giao dịch thanh toán |
+| CREATE | `ChuKyDienTu` | Chữ ký điện tử của khách hàng |
+| CREATE | `DieuKhoanMauHopDong` | Mẫu điều khoản hợp đồng (6 điều) |
+| CREATE | `ChiTietThueThietBi` | Chi tiết thiết bị trong hợp đồng |
+| UPDATE | `TrangThaiHopDong` | Mở rộng từ 7 → 10 trạng thái |
+
+---
 
 ## 📋 Tổng hợp tất cả Endpoints
 
@@ -1026,4 +1273,12 @@ ADD QrCodeUrl NVARCHAR(500) NULL;
 | 39 | PUT | `/api/gio-hang/{id}` | Cập nhật số lượng | KHÁCH HÀNG |
 | 40 | DELETE | `/api/gio-hang/{id}` | Xóa item khỏi giỏ | KHÁCH HÀNG |
 | 41 | GET | `/api/gio-hang/count` | Đếm tổng items (badge) | KHÁCH HÀNG |
+| 42 | GET | `/api/dia-chi` | Lấy DS địa chỉ giao hàng | KHÁCH HÀNG |
+| 43 | POST | `/api/dia-chi` | Tạo địa chỉ mới | KHÁCH HÀNG |
+| 44 | PUT | `/api/dia-chi/{id}` | Cập nhật địa chỉ | KHÁCH HÀNG |
+| 45 | DELETE | `/api/dia-chi/{id}` | Xóa địa chỉ | KHÁCH HÀNG |
+| 46 | POST | `/api/hop-dong/tao` | Tạo hợp đồng (checkout) | KHÁCH HÀNG |
+| 47 | POST | `/api/hop-dong/{id}/ky-ket` | Ký hợp đồng điện tử | KHÁCH HÀNG |
+| 48 | POST | `/api/hop-dong/{id}/xac-nhan-thanh-toan` | Xác nhận thanh toán | Authenticated |
+| 49 | GET | `/api/dieu-khoan-mau` | Lấy điều khoản mẫu HĐ | Authenticated |
 | — | GET | `/uploads/qrcode/{file}.png` | Truy cập ảnh QR (static) | Public |

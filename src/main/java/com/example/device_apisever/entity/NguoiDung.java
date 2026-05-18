@@ -64,6 +64,22 @@ public class NguoiDung {
     @Column(name = "DoiMatKhauLanDau", nullable = false)
     private Boolean doiMatKhauLanDau;
 
+    @Column(name = "Avt", length = 50)
+    private String avt;
+
+    // ── Thông tin CCCD cho hợp đồng ──
+    @Column(name = "CCCD", length = 20)
+    private String cccd;
+
+    @Column(name = "CccdNgayCap")
+    private LocalDateTime cccdNgayCap;
+
+    @Column(name = "CccdNoiCap", length = 200)
+    private String cccdNoiCap;
+
+    @Column(name = "DonViCongTac", length = 200)
+    private String donViCongTac;
+
     @PrePersist
     protected void onCreate() {
         if (ngayTao == null) ngayTao = LocalDateTime.now();

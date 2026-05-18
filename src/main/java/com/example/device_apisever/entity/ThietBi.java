@@ -2,6 +2,7 @@ package com.example.device_apisever.entity;
 
 import jakarta.persistence.*;
 import lombok.*;
+import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
 @Entity
@@ -31,4 +32,20 @@ public class ThietBi {
 
     @Column(name = "QrCodeUrl", length = 500)
     private String qrCodeUrl;
+
+    // ── Thông tin bổ sung cho hợp đồng ──
+    @Column(name = "SoSerial", length = 50)
+    private String soSerial;
+
+    @Column(name = "MucDichSuDung", length = 500)
+    private String mucDichSuDung;
+
+    @Column(name = "GiaTriMay", precision = 18, scale = 2)
+    private BigDecimal giaTriMay;
+
+    @Column(name = "NgayKiemDinh")
+    private LocalDateTime ngayKiemDinh;
+
+    @Column(name = "TinhTrangBanGiao", length = 1000)
+    private String tinhTrangBanGiao;
 }

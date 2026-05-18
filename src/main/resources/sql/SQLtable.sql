@@ -1,4 +1,4 @@
-/****** Object:  Database [QuanLyThietBi]    Script Date: 5/10/2026 2:43:43 PM ******/
+/****** Object:  Database [QuanLyThietBi]    Script Date: 5/16/2026 3:12:16 AM ******/
 CREATE DATABASE [QuanLyThietBi]  (EDITION = 'Standard', SERVICE_OBJECTIVE = 'S0', MAXSIZE = 250 GB) WITH CATALOG_COLLATION = SQL_Latin1_General_CP1_CI_AS, LEDGER = OFF;
 GO
 ALTER DATABASE [QuanLyThietBi] SET COMPATIBILITY_LEVEL = 160
@@ -45,7 +45,7 @@ ALTER DATABASE [QuanLyThietBi] SET QUERY_STORE = ON
 GO
 ALTER DATABASE [QuanLyThietBi] SET QUERY_STORE (OPERATION_MODE = READ_WRITE, CLEANUP_POLICY = (STALE_QUERY_THRESHOLD_DAYS = 30), DATA_FLUSH_INTERVAL_SECONDS = 900, INTERVAL_LENGTH_MINUTES = 60, MAX_STORAGE_SIZE_MB = 1000, QUERY_CAPTURE_MODE = AUTO, SIZE_BASED_CLEANUP_MODE = AUTO, MAX_PLANS_PER_QUERY = 200, WAIT_STATS_CAPTURE_MODE = ON)
 GO
-/****** Object:  Table [dbo].[LoaiThietBi]    Script Date: 5/10/2026 2:43:44 PM ******/
+/****** Object:  Table [dbo].[LoaiThietBi]    Script Date: 5/16/2026 3:12:16 AM ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
@@ -64,7 +64,7 @@ CREATE TABLE [dbo].[LoaiThietBi](
 )WITH (STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY]
 ) ON [PRIMARY] TEXTIMAGE_ON [PRIMARY]
 GO
-/****** Object:  Table [dbo].[TinhTrangThietBi]    Script Date: 5/10/2026 2:43:47 PM ******/
+/****** Object:  Table [dbo].[TinhTrangThietBi]    Script Date: 5/16/2026 3:12:16 AM ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
@@ -79,7 +79,7 @@ CREATE TABLE [dbo].[TinhTrangThietBi](
 )WITH (STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY]
 ) ON [PRIMARY]
 GO
-/****** Object:  Table [dbo].[ThietBi]    Script Date: 5/10/2026 2:43:47 PM ******/
+/****** Object:  Table [dbo].[ThietBi]    Script Date: 5/16/2026 3:12:16 AM ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
@@ -97,7 +97,7 @@ CREATE TABLE [dbo].[ThietBi](
 )WITH (STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY]
 ) ON [PRIMARY]
 GO
-/****** Object:  Table [dbo].[ChiTietThue]    Script Date: 5/10/2026 2:43:47 PM ******/
+/****** Object:  Table [dbo].[ChiTietThue]    Script Date: 5/16/2026 3:12:16 AM ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
@@ -113,7 +113,7 @@ CREATE TABLE [dbo].[ChiTietThue](
 )WITH (STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY]
 ) ON [PRIMARY]
 GO
-/****** Object:  Table [dbo].[Kho]    Script Date: 5/10/2026 2:43:47 PM ******/
+/****** Object:  Table [dbo].[Kho]    Script Date: 5/16/2026 3:12:16 AM ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
@@ -130,7 +130,7 @@ CREATE TABLE [dbo].[Kho](
 )WITH (STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY]
 ) ON [PRIMARY]
 GO
-/****** Object:  View [dbo].[v_ChiTietHopDong]    Script Date: 5/10/2026 2:43:47 PM ******/
+/****** Object:  View [dbo].[v_ChiTietHopDong]    Script Date: 5/16/2026 3:12:16 AM ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
@@ -155,7 +155,7 @@ JOIN  LoaiThietBi       ltb ON ltb.LoaiThietBiID  = tb.LoaiThietBiID
 JOIN  TinhTrangThietBi  tt  ON tt.TinhTrangID      = tb.TinhTrangID
 JOIN  Kho               k   ON k.KhoID             = tb.KhoHienTaiID;
 GO
-/****** Object:  Table [dbo].[NguoiDung]    Script Date: 5/10/2026 2:43:47 PM ******/
+/****** Object:  Table [dbo].[NguoiDung]    Script Date: 5/16/2026 3:12:16 AM ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
@@ -177,13 +177,14 @@ CREATE TABLE [dbo].[NguoiDung](
 	[NgayTao] [datetime] NOT NULL,
 	[LanDangNhapCuoi] [datetime] NULL,
 	[DoiMatKhauLanDau] [bit] NOT NULL,
+	[Avt] [nchar](50) NULL,
  CONSTRAINT [PK_NguoiDung] PRIMARY KEY CLUSTERED 
 (
 	[NguoiDungID] ASC
 )WITH (STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY]
 ) ON [PRIMARY]
 GO
-/****** Object:  Table [dbo].[TrangThaiHopDong]    Script Date: 5/10/2026 2:43:47 PM ******/
+/****** Object:  Table [dbo].[TrangThaiHopDong]    Script Date: 5/16/2026 3:12:16 AM ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
@@ -197,7 +198,7 @@ CREATE TABLE [dbo].[TrangThaiHopDong](
 )WITH (STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY]
 ) ON [PRIMARY]
 GO
-/****** Object:  Table [dbo].[HopDongThue]    Script Date: 5/10/2026 2:43:47 PM ******/
+/****** Object:  Table [dbo].[HopDongThue]    Script Date: 5/16/2026 3:12:16 AM ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
@@ -223,7 +224,7 @@ CREATE TABLE [dbo].[HopDongThue](
 )WITH (STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY]
 ) ON [PRIMARY]
 GO
-/****** Object:  View [dbo].[v_HopDongTongQuan]    Script Date: 5/10/2026 2:43:47 PM ******/
+/****** Object:  View [dbo].[v_HopDongTongQuan]    Script Date: 5/16/2026 3:12:16 AM ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
@@ -254,7 +255,7 @@ JOIN  NguoiDung         kh ON kh.NguoiDungID = hd.NguoiDungKhachID
 JOIN  NguoiDung         nd ON nd.NguoiDungID = hd.NguoiDungTaoID
 JOIN  TrangThaiHopDong  tt ON tt.TrangThaiID = hd.TrangThaiID;
 GO
-/****** Object:  Table [dbo].[LichSuBaoTri]    Script Date: 5/10/2026 2:43:47 PM ******/
+/****** Object:  Table [dbo].[LichSuBaoTri]    Script Date: 5/16/2026 3:12:16 AM ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
@@ -277,7 +278,7 @@ CREATE TABLE [dbo].[LichSuBaoTri](
 )WITH (STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY]
 ) ON [PRIMARY] TEXTIMAGE_ON [PRIMARY]
 GO
-/****** Object:  View [dbo].[v_ThanhLyHopDong]    Script Date: 5/10/2026 2:43:47 PM ******/
+/****** Object:  View [dbo].[v_ThanhLyHopDong]    Script Date: 5/16/2026 3:12:16 AM ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
@@ -305,7 +306,7 @@ SELECT
     ) AS SoPhieuBoiThuong
 FROM HopDongThue hd;
 GO
-/****** Object:  Table [dbo].[DanhMucThietBi]    Script Date: 5/10/2026 2:43:47 PM ******/
+/****** Object:  Table [dbo].[DanhMucThietBi]    Script Date: 5/16/2026 3:12:16 AM ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
@@ -319,7 +320,7 @@ CREATE TABLE [dbo].[DanhMucThietBi](
 )WITH (STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY]
 ) ON [PRIMARY]
 GO
-/****** Object:  View [dbo].[v_ThietBiSanSang]    Script Date: 5/10/2026 2:43:47 PM ******/
+/****** Object:  View [dbo].[v_ThietBiSanSang]    Script Date: 5/16/2026 3:12:16 AM ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
@@ -347,7 +348,7 @@ JOIN  DanhMucThietBi dm  ON dm.DanhMucID     = ltb.DanhMucID
 JOIN  Kho           k   ON k.KhoID           = tb.KhoHienTaiID
 WHERE tb.TinhTrangID = 1;   -- chỉ "Sẵn sàng"
 GO
-/****** Object:  Table [dbo].[ChiTietPhieuNhap]    Script Date: 5/10/2026 2:43:47 PM ******/
+/****** Object:  Table [dbo].[ChiTietPhieuNhap]    Script Date: 5/16/2026 3:12:16 AM ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
@@ -364,7 +365,7 @@ CREATE TABLE [dbo].[ChiTietPhieuNhap](
 )WITH (STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY]
 ) ON [PRIMARY]
 GO
-/****** Object:  Table [dbo].[DieuKhoanHopDong]    Script Date: 5/10/2026 2:43:47 PM ******/
+/****** Object:  Table [dbo].[DieuKhoanHopDong]    Script Date: 5/16/2026 3:12:16 AM ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
@@ -382,7 +383,7 @@ CREATE TABLE [dbo].[DieuKhoanHopDong](
 )WITH (STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY]
 ) ON [PRIMARY] TEXTIMAGE_ON [PRIMARY]
 GO
-/****** Object:  Table [dbo].[FCMToken]    Script Date: 5/10/2026 2:43:47 PM ******/
+/****** Object:  Table [dbo].[FCMToken]    Script Date: 5/16/2026 3:12:16 AM ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
@@ -399,7 +400,7 @@ PRIMARY KEY CLUSTERED
 )WITH (STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY]
 ) ON [PRIMARY]
 GO
-/****** Object:  Table [dbo].[GioHang]    Script Date: 5/10/2026 2:43:47 PM ******/
+/****** Object:  Table [dbo].[GioHang]    Script Date: 5/16/2026 3:12:16 AM ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
@@ -407,16 +408,16 @@ GO
 CREATE TABLE [dbo].[GioHang](
 	[GioHangID] [int] IDENTITY(1,1) NOT NULL,
 	[NguoiDungID] [int] NOT NULL,
+	[NgayThem] [datetime] NOT NULL,
 	[LoaiThietBiID] [int] NOT NULL,
 	[SoLuong] [int] NOT NULL,
-	[NgayThem] [datetime] NOT NULL,
  CONSTRAINT [PK_GioHang] PRIMARY KEY CLUSTERED 
 (
 	[GioHangID] ASC
 )WITH (STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY]
 ) ON [PRIMARY]
 GO
-/****** Object:  Table [dbo].[HinhAnhThietBi]    Script Date: 5/10/2026 2:43:47 PM ******/
+/****** Object:  Table [dbo].[HinhAnhThietBi]    Script Date: 5/16/2026 3:12:16 AM ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
@@ -436,7 +437,7 @@ CREATE TABLE [dbo].[HinhAnhThietBi](
 )WITH (STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY]
 ) ON [PRIMARY]
 GO
-/****** Object:  Table [dbo].[LichSuBanGiao]    Script Date: 5/10/2026 2:43:47 PM ******/
+/****** Object:  Table [dbo].[LichSuBanGiao]    Script Date: 5/16/2026 3:12:16 AM ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
@@ -460,7 +461,7 @@ CREATE TABLE [dbo].[LichSuBanGiao](
 )WITH (STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY]
 ) ON [PRIMARY]
 GO
-/****** Object:  Table [dbo].[LoaiAnh]    Script Date: 5/10/2026 2:43:47 PM ******/
+/****** Object:  Table [dbo].[LoaiAnh]    Script Date: 5/16/2026 3:12:16 AM ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
@@ -474,7 +475,7 @@ CREATE TABLE [dbo].[LoaiAnh](
 )WITH (STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY]
 ) ON [PRIMARY]
 GO
-/****** Object:  Table [dbo].[LoaiBaoTri]    Script Date: 5/10/2026 2:43:47 PM ******/
+/****** Object:  Table [dbo].[LoaiBaoTri]    Script Date: 5/16/2026 3:12:16 AM ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
@@ -488,7 +489,7 @@ CREATE TABLE [dbo].[LoaiBaoTri](
 )WITH (STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY]
 ) ON [PRIMARY]
 GO
-/****** Object:  Table [dbo].[LoaiGiaoDich]    Script Date: 5/10/2026 2:43:47 PM ******/
+/****** Object:  Table [dbo].[LoaiGiaoDich]    Script Date: 5/16/2026 3:12:16 AM ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
@@ -502,7 +503,7 @@ CREATE TABLE [dbo].[LoaiGiaoDich](
 )WITH (STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY]
 ) ON [PRIMARY]
 GO
-/****** Object:  Table [dbo].[LoaiKhachHang]    Script Date: 5/10/2026 2:43:47 PM ******/
+/****** Object:  Table [dbo].[LoaiKhachHang]    Script Date: 5/16/2026 3:12:16 AM ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
@@ -516,7 +517,7 @@ CREATE TABLE [dbo].[LoaiKhachHang](
 )WITH (STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY]
 ) ON [PRIMARY]
 GO
-/****** Object:  Table [dbo].[MucDanhGia]    Script Date: 5/10/2026 2:43:47 PM ******/
+/****** Object:  Table [dbo].[MucDanhGia]    Script Date: 5/16/2026 3:12:16 AM ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
@@ -532,7 +533,7 @@ CREATE TABLE [dbo].[MucDanhGia](
 )WITH (STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY]
 ) ON [PRIMARY]
 GO
-/****** Object:  Table [dbo].[NhaCungCap]    Script Date: 5/10/2026 2:43:47 PM ******/
+/****** Object:  Table [dbo].[NhaCungCap]    Script Date: 5/16/2026 3:12:16 AM ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
@@ -549,7 +550,7 @@ CREATE TABLE [dbo].[NhaCungCap](
 )WITH (STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY]
 ) ON [PRIMARY]
 GO
-/****** Object:  Table [dbo].[PhieuNhap]    Script Date: 5/10/2026 2:43:47 PM ******/
+/****** Object:  Table [dbo].[PhieuNhap]    Script Date: 5/16/2026 3:12:16 AM ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
@@ -567,7 +568,7 @@ CREATE TABLE [dbo].[PhieuNhap](
 )WITH (STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY]
 ) ON [PRIMARY]
 GO
-/****** Object:  Table [dbo].[ThongBao]    Script Date: 5/10/2026 2:43:47 PM ******/
+/****** Object:  Table [dbo].[ThongBao]    Script Date: 5/16/2026 3:12:16 AM ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
@@ -586,7 +587,7 @@ PRIMARY KEY CLUSTERED
 )WITH (STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY]
 ) ON [PRIMARY] TEXTIMAGE_ON [PRIMARY]
 GO
-/****** Object:  Table [dbo].[ThongBaoNguoiDung]    Script Date: 5/10/2026 2:43:47 PM ******/
+/****** Object:  Table [dbo].[ThongBaoNguoiDung]    Script Date: 5/16/2026 3:12:16 AM ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
@@ -603,7 +604,7 @@ PRIMARY KEY CLUSTERED
 )WITH (STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY]
 ) ON [PRIMARY]
 GO
-/****** Object:  Table [dbo].[TrangThaiBaoTri]    Script Date: 5/10/2026 2:43:47 PM ******/
+/****** Object:  Table [dbo].[TrangThaiBaoTri]    Script Date: 5/16/2026 3:12:16 AM ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
@@ -617,7 +618,7 @@ CREATE TABLE [dbo].[TrangThaiBaoTri](
 )WITH (STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY]
 ) ON [PRIMARY]
 GO
-/****** Object:  Table [dbo].[TrangThaiNguoiDung]    Script Date: 5/10/2026 2:43:47 PM ******/
+/****** Object:  Table [dbo].[TrangThaiNguoiDung]    Script Date: 5/16/2026 3:12:16 AM ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
@@ -631,7 +632,7 @@ CREATE TABLE [dbo].[TrangThaiNguoiDung](
 )WITH (STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY]
 ) ON [PRIMARY]
 GO
-/****** Object:  Table [dbo].[VaiTro]    Script Date: 5/10/2026 2:43:47 PM ******/
+/****** Object:  Table [dbo].[VaiTro]    Script Date: 5/16/2026 3:12:16 AM ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
@@ -646,7 +647,7 @@ CREATE TABLE [dbo].[VaiTro](
 )WITH (STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY]
 ) ON [PRIMARY]
 GO
-/****** Object:  Table [dbo].[XacNhanDieuKhoan]    Script Date: 5/10/2026 2:43:47 PM ******/
+/****** Object:  Table [dbo].[XacNhanDieuKhoan]    Script Date: 5/16/2026 3:12:16 AM ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
@@ -690,6 +691,13 @@ INSERT [dbo].[DieuKhoanHopDong] ([DieuKhoanID], [TieuDe], [NoiDung], [PhienBan],
 - Thanh toán cuối kỳ = Tổng tiền thuê + Phí bồi thường − Tiền cọc.
 - Thời hạn thanh toán: 3 ngày làm việc kể từ khi xuất hoá đơn thanh lý.', N'1.0', CAST(N'2026-04-21' AS Date), 1)
 SET IDENTITY_INSERT [dbo].[DieuKhoanHopDong] OFF
+GO
+SET IDENTITY_INSERT [dbo].[GioHang] ON 
+
+INSERT [dbo].[GioHang] ([GioHangID], [NguoiDungID], [NgayThem], [LoaiThietBiID], [SoLuong]) VALUES (1, 8, CAST(N'2026-05-10T15:14:30.637' AS DateTime), 10, 2)
+INSERT [dbo].[GioHang] ([GioHangID], [NguoiDungID], [NgayThem], [LoaiThietBiID], [SoLuong]) VALUES (2, 8, CAST(N'2026-05-10T15:14:37.127' AS DateTime), 3, 1)
+INSERT [dbo].[GioHang] ([GioHangID], [NguoiDungID], [NgayThem], [LoaiThietBiID], [SoLuong]) VALUES (3, 8, CAST(N'2026-05-10T15:17:55.780' AS DateTime), 6, 1)
+SET IDENTITY_INSERT [dbo].[GioHang] OFF
 GO
 SET IDENTITY_INSERT [dbo].[Kho] ON 
 
@@ -735,15 +743,15 @@ INSERT [dbo].[MucDanhGia] ([MucDanhGiaID], [TenMuc], [TinhVaoBoiThuong], [MoTa])
 GO
 SET IDENTITY_INSERT [dbo].[NguoiDung] ON 
 
-INSERT [dbo].[NguoiDung] ([NguoiDungID], [MaNguoiDung], [HoTen], [TaiKhoan], [MatKhau], [VaiTroID], [KhoID], [SoDienThoai], [Email], [DiaChi], [LoaiKhachHangID], [MaSoThue], [TrangThaiID], [NgayTao], [LanDangNhapCuoi], [DoiMatKhauLanDau]) VALUES (1, N'NV01', N'Nguyễn Văn Admin', N'admin', N'$2a$10$gXMH2dj6H/gie0hUeiu8C.8XQPQoovn8ffYjapDy5NIFr4H0f92Iu', 1, NULL, NULL, NULL, NULL, NULL, NULL, 1, CAST(N'2026-04-21T08:46:16.043' AS DateTime), CAST(N'2026-05-08T14:29:50.970' AS DateTime), 0)
-INSERT [dbo].[NguoiDung] ([NguoiDungID], [MaNguoiDung], [HoTen], [TaiKhoan], [MatKhau], [VaiTroID], [KhoID], [SoDienThoai], [Email], [DiaChi], [LoaiKhachHangID], [MaSoThue], [TrangThaiID], [NgayTao], [LanDangNhapCuoi], [DoiMatKhauLanDau]) VALUES (2, N'NV02', N'Trần Thủ Kho HCM', N'kho_hcm', N'$2b$12$placeholder', 2, 1, NULL, NULL, NULL, NULL, NULL, 1, CAST(N'2026-04-21T08:46:16.043' AS DateTime), NULL, 1)
-INSERT [dbo].[NguoiDung] ([NguoiDungID], [MaNguoiDung], [HoTen], [TaiKhoan], [MatKhau], [VaiTroID], [KhoID], [SoDienThoai], [Email], [DiaChi], [LoaiKhachHangID], [MaSoThue], [TrangThaiID], [NgayTao], [LanDangNhapCuoi], [DoiMatKhauLanDau]) VALUES (3, N'NV03', N'Lê Kỹ Thuật HCM', N'kythuat1', N'$2b$12$placeholder', 3, 1, NULL, NULL, NULL, NULL, NULL, 1, CAST(N'2026-04-21T08:46:16.043' AS DateTime), NULL, 1)
-INSERT [dbo].[NguoiDung] ([NguoiDungID], [MaNguoiDung], [HoTen], [TaiKhoan], [MatKhau], [VaiTroID], [KhoID], [SoDienThoai], [Email], [DiaChi], [LoaiKhachHangID], [MaSoThue], [TrangThaiID], [NgayTao], [LanDangNhapCuoi], [DoiMatKhauLanDau]) VALUES (4, N'NV04', N'Phạm Thủ Kho ĐN', N'kho_dn', N'$2b$12$placeholder', 2, 2, NULL, NULL, NULL, NULL, NULL, 1, CAST(N'2026-04-21T08:46:16.043' AS DateTime), NULL, 1)
-INSERT [dbo].[NguoiDung] ([NguoiDungID], [MaNguoiDung], [HoTen], [TaiKhoan], [MatKhau], [VaiTroID], [KhoID], [SoDienThoai], [Email], [DiaChi], [LoaiKhachHangID], [MaSoThue], [TrangThaiID], [NgayTao], [LanDangNhapCuoi], [DoiMatKhauLanDau]) VALUES (5, N'NV05', N'Hoàng Kỹ Thuật ĐN', N'kythuat2', N'$2b$12$placeholder', 3, 2, NULL, NULL, NULL, NULL, NULL, 1, CAST(N'2026-04-21T08:46:16.043' AS DateTime), NULL, 1)
-INSERT [dbo].[NguoiDung] ([NguoiDungID], [MaNguoiDung], [HoTen], [TaiKhoan], [MatKhau], [VaiTroID], [KhoID], [SoDienThoai], [Email], [DiaChi], [LoaiKhachHangID], [MaSoThue], [TrangThaiID], [NgayTao], [LanDangNhapCuoi], [DoiMatKhauLanDau]) VALUES (6, N'KH00001', N'Nguyễn Thị Khách', N'khachhang1@email.com', N'$2b$12$placeholder', 4, NULL, N'0901234567', N'khachhang1@email.com', N'Quận 1, TP.HCM', 1, NULL, 1, CAST(N'2026-04-21T08:46:16.047' AS DateTime), NULL, 0)
-INSERT [dbo].[NguoiDung] ([NguoiDungID], [MaNguoiDung], [HoTen], [TaiKhoan], [MatKhau], [VaiTroID], [KhoID], [SoDienThoai], [Email], [DiaChi], [LoaiKhachHangID], [MaSoThue], [TrangThaiID], [NgayTao], [LanDangNhapCuoi], [DoiMatKhauLanDau]) VALUES (7, N'KH00002', N'Công ty TNHH ABC', N'abc.company@email.com', N'$2b$12$placeholder', 4, NULL, N'0287654321', N'abc.company@email.com', N'Bình Dương', 2, N'0123456789', 1, CAST(N'2026-04-21T08:46:16.047' AS DateTime), NULL, 0)
-INSERT [dbo].[NguoiDung] ([NguoiDungID], [MaNguoiDung], [HoTen], [TaiKhoan], [MatKhau], [VaiTroID], [KhoID], [SoDienThoai], [Email], [DiaChi], [LoaiKhachHangID], [MaSoThue], [TrangThaiID], [NgayTao], [LanDangNhapCuoi], [DoiMatKhauLanDau]) VALUES (8, N'KH00003', N'Lô Hoàng Vũ', N'bao295770@gmail.com', N'$2a$10$gXMH2dj6H/gie0hUeiu8C.8XQPQoovn8ffYjapDy5NIFr4H0f92Iu', 4, NULL, N'0385489501', N'bao295770@gmail.com', N'74/6 Núi Thành, Tân Bình, Tp.HCM', 1, NULL, 1, CAST(N'2026-04-21T12:47:01.873' AS DateTime), CAST(N'2026-05-10T14:21:03.947' AS DateTime), 0)
-INSERT [dbo].[NguoiDung] ([NguoiDungID], [MaNguoiDung], [HoTen], [TaiKhoan], [MatKhau], [VaiTroID], [KhoID], [SoDienThoai], [Email], [DiaChi], [LoaiKhachHangID], [MaSoThue], [TrangThaiID], [NgayTao], [LanDangNhapCuoi], [DoiMatKhauLanDau]) VALUES (9, N'KH00004', N'Lô Hoàng Vũ', N'hoangvu2004dl@gmail.com', N'$2a$10$g7kpcg.6Q0sGKRrh9gNU0eIBxhW33fdaKiUt0q6XraOnaT2Yvh9ui', 4, NULL, N'0385489591', N'hoangvu2004dl@gmail.com', N'74/6 Núi Thành, Tân Bình, Tp.HCM', 1, NULL, 1, CAST(N'2026-04-21T14:03:01.080' AS DateTime), NULL, 0)
+INSERT [dbo].[NguoiDung] ([NguoiDungID], [MaNguoiDung], [HoTen], [TaiKhoan], [MatKhau], [VaiTroID], [KhoID], [SoDienThoai], [Email], [DiaChi], [LoaiKhachHangID], [MaSoThue], [TrangThaiID], [NgayTao], [LanDangNhapCuoi], [DoiMatKhauLanDau], [Avt]) VALUES (1, N'NV01', N'Lô Hoàng Vũ', N'admin', N'$2a$10$gXMH2dj6H/gie0hUeiu8C.8XQPQoovn8ffYjapDy5NIFr4H0f92Iu', 1, NULL, NULL, NULL, NULL, NULL, NULL, 1, CAST(N'2026-04-21T08:46:16.043' AS DateTime), CAST(N'2026-05-16T00:03:44.847' AS DateTime), 0, NULL)
+INSERT [dbo].[NguoiDung] ([NguoiDungID], [MaNguoiDung], [HoTen], [TaiKhoan], [MatKhau], [VaiTroID], [KhoID], [SoDienThoai], [Email], [DiaChi], [LoaiKhachHangID], [MaSoThue], [TrangThaiID], [NgayTao], [LanDangNhapCuoi], [DoiMatKhauLanDau], [Avt]) VALUES (2, N'NV02', N'Trần Thủ Kho HCM', N'kho_hcm', N'$2a$10$gXMH2dj6H/gie0hUeiu8C.8XQPQoovn8ffYjapDy5NIFr4H0f92Iu', 2, 1, NULL, NULL, NULL, NULL, NULL, 1, CAST(N'2026-04-21T08:46:16.043' AS DateTime), NULL, 1, NULL)
+INSERT [dbo].[NguoiDung] ([NguoiDungID], [MaNguoiDung], [HoTen], [TaiKhoan], [MatKhau], [VaiTroID], [KhoID], [SoDienThoai], [Email], [DiaChi], [LoaiKhachHangID], [MaSoThue], [TrangThaiID], [NgayTao], [LanDangNhapCuoi], [DoiMatKhauLanDau], [Avt]) VALUES (3, N'NV03', N'Lê Kỹ Thuật HCM', N'kythuat1', N'$2a$10$gXMH2dj6H/gie0hUeiu8C.8XQPQoovn8ffYjapDy5NIFr4H0f92Iu', 3, 1, NULL, NULL, NULL, NULL, NULL, 1, CAST(N'2026-04-21T08:46:16.043' AS DateTime), NULL, 1, NULL)
+INSERT [dbo].[NguoiDung] ([NguoiDungID], [MaNguoiDung], [HoTen], [TaiKhoan], [MatKhau], [VaiTroID], [KhoID], [SoDienThoai], [Email], [DiaChi], [LoaiKhachHangID], [MaSoThue], [TrangThaiID], [NgayTao], [LanDangNhapCuoi], [DoiMatKhauLanDau], [Avt]) VALUES (4, N'NV04', N'Phạm Thủ Kho ĐN', N'kho_dn', N'$2a$10$gXMH2dj6H/gie0hUeiu8C.8XQPQoovn8ffYjapDy5NIFr4H0f92Iu', 2, 2, NULL, NULL, NULL, NULL, NULL, 1, CAST(N'2026-04-21T08:46:16.043' AS DateTime), NULL, 1, NULL)
+INSERT [dbo].[NguoiDung] ([NguoiDungID], [MaNguoiDung], [HoTen], [TaiKhoan], [MatKhau], [VaiTroID], [KhoID], [SoDienThoai], [Email], [DiaChi], [LoaiKhachHangID], [MaSoThue], [TrangThaiID], [NgayTao], [LanDangNhapCuoi], [DoiMatKhauLanDau], [Avt]) VALUES (5, N'NV05', N'Hoàng Kỹ Thuật ĐN', N'kythuat2', N'$2a$10$gXMH2dj6H/gie0hUeiu8C.8XQPQoovn8ffYjapDy5NIFr4H0f92Iu', 3, 2, NULL, NULL, NULL, NULL, NULL, 1, CAST(N'2026-04-21T08:46:16.043' AS DateTime), NULL, 1, NULL)
+INSERT [dbo].[NguoiDung] ([NguoiDungID], [MaNguoiDung], [HoTen], [TaiKhoan], [MatKhau], [VaiTroID], [KhoID], [SoDienThoai], [Email], [DiaChi], [LoaiKhachHangID], [MaSoThue], [TrangThaiID], [NgayTao], [LanDangNhapCuoi], [DoiMatKhauLanDau], [Avt]) VALUES (6, N'KH00001', N'Nguyễn Thị Khách', N'khachhang1@email.com', N'$2a$10$gXMH2dj6H/gie0hUeiu8C.8XQPQoovn8ffYjapDy5NIFr4H0f92Iu', 4, NULL, N'0901234567', N'khachhang1@email.com', N'Quận 1, TP.HCM', 1, NULL, 1, CAST(N'2026-04-21T08:46:16.047' AS DateTime), NULL, 0, NULL)
+INSERT [dbo].[NguoiDung] ([NguoiDungID], [MaNguoiDung], [HoTen], [TaiKhoan], [MatKhau], [VaiTroID], [KhoID], [SoDienThoai], [Email], [DiaChi], [LoaiKhachHangID], [MaSoThue], [TrangThaiID], [NgayTao], [LanDangNhapCuoi], [DoiMatKhauLanDau], [Avt]) VALUES (7, N'KH00002', N'Công ty TNHH ABC', N'abc.company@email.com', N'$2a$10$gXMH2dj6H/gie0hUeiu8C.8XQPQoovn8ffYjapDy5NIFr4H0f92Iu', 4, NULL, N'0287654321', N'abc.company@email.com', N'Bình Dương', 2, N'0123456789', 1, CAST(N'2026-04-21T08:46:16.047' AS DateTime), NULL, 0, NULL)
+INSERT [dbo].[NguoiDung] ([NguoiDungID], [MaNguoiDung], [HoTen], [TaiKhoan], [MatKhau], [VaiTroID], [KhoID], [SoDienThoai], [Email], [DiaChi], [LoaiKhachHangID], [MaSoThue], [TrangThaiID], [NgayTao], [LanDangNhapCuoi], [DoiMatKhauLanDau], [Avt]) VALUES (8, N'KH00003', N'Lô Hoàng Vũ', N'bao295770@gmail.com', N'$2a$10$gXMH2dj6H/gie0hUeiu8C.8XQPQoovn8ffYjapDy5NIFr4H0f92Iu', 4, NULL, N'0385489501', N'bao295770@gmail.com', N'74/6 Núi Thành, Tân Bình, Tp.HCM', 1, NULL, 1, CAST(N'2026-04-21T12:47:01.873' AS DateTime), CAST(N'2026-05-16T02:07:37.150' AS DateTime), 0, NULL)
+INSERT [dbo].[NguoiDung] ([NguoiDungID], [MaNguoiDung], [HoTen], [TaiKhoan], [MatKhau], [VaiTroID], [KhoID], [SoDienThoai], [Email], [DiaChi], [LoaiKhachHangID], [MaSoThue], [TrangThaiID], [NgayTao], [LanDangNhapCuoi], [DoiMatKhauLanDau], [Avt]) VALUES (9, N'KH00004', N'Lô Hoàng Vũ', N'hoangvu2004dl@gmail.com', N'$2a$10$gXMH2dj6H/gie0hUeiu8C.8XQPQoovn8ffYjapDy5NIFr4H0f92Iu', 4, NULL, N'0385489591', N'hoangvu2004dl@gmail.com', N'74/6 Núi Thành, Tân Bình, Tp.HCM', 1, NULL, 1, CAST(N'2026-04-21T14:03:01.080' AS DateTime), NULL, 0, NULL)
 SET IDENTITY_INSERT [dbo].[NguoiDung] OFF
 GO
 SET IDENTITY_INSERT [dbo].[NhaCungCap] ON 
@@ -778,7 +786,7 @@ INSERT [dbo].[VaiTro] ([VaiTroID], [TenVaiTro], [MoTa]) VALUES (2, N'Thủ kho',
 INSERT [dbo].[VaiTro] ([VaiTroID], [TenVaiTro], [MoTa]) VALUES (3, N'Kỹ thuật viên', N'Giao nhận hiện trường, bảo trì và sự cố')
 INSERT [dbo].[VaiTro] ([VaiTroID], [TenVaiTro], [MoTa]) VALUES (4, N'Khách hàng', N'Tự đặt thuê qua app, xem hợp đồng cá nhân')
 GO
-/****** Object:  Index [UQ_GioHang]    Script Date: 5/10/2026 2:44:33 PM ******/
+/****** Object:  Index [UQ_GioHang]    Script Date: 5/16/2026 3:12:41 AM ******/
 ALTER TABLE [dbo].[GioHang] ADD  CONSTRAINT [UQ_GioHang] UNIQUE NONCLUSTERED 
 (
 	[NguoiDungID] ASC,
@@ -787,7 +795,7 @@ ALTER TABLE [dbo].[GioHang] ADD  CONSTRAINT [UQ_GioHang] UNIQUE NONCLUSTERED
 GO
 SET ANSI_PADDING ON
 GO
-/****** Object:  Index [UQ_NguoiDung_Ma]    Script Date: 5/10/2026 2:44:33 PM ******/
+/****** Object:  Index [UQ_NguoiDung_Ma]    Script Date: 5/16/2026 3:12:41 AM ******/
 ALTER TABLE [dbo].[NguoiDung] ADD  CONSTRAINT [UQ_NguoiDung_Ma] UNIQUE NONCLUSTERED 
 (
 	[MaNguoiDung] ASC
@@ -795,7 +803,7 @@ ALTER TABLE [dbo].[NguoiDung] ADD  CONSTRAINT [UQ_NguoiDung_Ma] UNIQUE NONCLUSTE
 GO
 SET ANSI_PADDING ON
 GO
-/****** Object:  Index [UQ_NguoiDung_TaiKhoan]    Script Date: 5/10/2026 2:44:33 PM ******/
+/****** Object:  Index [UQ_NguoiDung_TaiKhoan]    Script Date: 5/16/2026 3:12:41 AM ******/
 ALTER TABLE [dbo].[NguoiDung] ADD  CONSTRAINT [UQ_NguoiDung_TaiKhoan] UNIQUE NONCLUSTERED 
 (
 	[TaiKhoan] ASC
@@ -803,13 +811,13 @@ ALTER TABLE [dbo].[NguoiDung] ADD  CONSTRAINT [UQ_NguoiDung_TaiKhoan] UNIQUE NON
 GO
 SET ANSI_PADDING ON
 GO
-/****** Object:  Index [UQ_ThietBi_Ma]    Script Date: 5/10/2026 2:44:33 PM ******/
+/****** Object:  Index [UQ_ThietBi_Ma]    Script Date: 5/16/2026 3:12:41 AM ******/
 ALTER TABLE [dbo].[ThietBi] ADD  CONSTRAINT [UQ_ThietBi_Ma] UNIQUE NONCLUSTERED 
 (
 	[MaTaiSan] ASC
 )WITH (STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ONLINE = OFF, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY]
 GO
-/****** Object:  Index [UQ_TBND]    Script Date: 5/10/2026 2:44:33 PM ******/
+/****** Object:  Index [UQ_TBND]    Script Date: 5/16/2026 3:12:41 AM ******/
 ALTER TABLE [dbo].[ThongBaoNguoiDung] ADD  CONSTRAINT [UQ_TBND] UNIQUE NONCLUSTERED 
 (
 	[ThongBaoID] ASC,
@@ -821,6 +829,8 @@ GO
 ALTER TABLE [dbo].[FCMToken] ADD  DEFAULT (getdate()) FOR [NgayCapNhat]
 GO
 ALTER TABLE [dbo].[GioHang] ADD  CONSTRAINT [DF_GioHang_Ngay]  DEFAULT (getdate()) FOR [NgayThem]
+GO
+ALTER TABLE [dbo].[GioHang] ADD  DEFAULT ((1)) FOR [SoLuong]
 GO
 ALTER TABLE [dbo].[HinhAnhThietBi] ADD  CONSTRAINT [DF_HinhAnh_Ngay]  DEFAULT (getdate()) FOR [NgayChup]
 GO
@@ -897,11 +907,6 @@ ALTER TABLE [dbo].[GioHang]  WITH CHECK ADD  CONSTRAINT [FK_GH_NguoiDung] FOREIG
 REFERENCES [dbo].[NguoiDung] ([NguoiDungID])
 GO
 ALTER TABLE [dbo].[GioHang] CHECK CONSTRAINT [FK_GH_NguoiDung]
-GO
-ALTER TABLE [dbo].[GioHang]  WITH CHECK ADD  CONSTRAINT [FK_GH_ThietBi] FOREIGN KEY([ThietBiID])
-REFERENCES [dbo].[ThietBi] ([ThietBiID])
-GO
-ALTER TABLE [dbo].[GioHang] CHECK CONSTRAINT [FK_GH_ThietBi]
 GO
 ALTER TABLE [dbo].[HinhAnhThietBi]  WITH CHECK ADD  CONSTRAINT [FK_HA_BanGiao] FOREIGN KEY([BanGiaoID])
 REFERENCES [dbo].[LichSuBanGiao] ([BanGiaoID])
