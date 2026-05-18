@@ -67,4 +67,47 @@ public class HopDongController {
         XacNhanThanhToanResponse res = hopDongService.xacNhanThanhToan(id, request);
         return ResponseEntity.ok(ApiResponse.ok("Xác nhận thanh toán thành công", res));
     }
+
+    /**
+     * GET /api/hop-dong/cua-toi — Lấy danh sách tất cả hợp đồng của khách hàng
+     */
+    @GetMapping("/cua-toi")
+    public ResponseEntity<ApiResponse<java.util.List<HopDongSummaryResponse>>> getMyContracts(
+            Authentication auth) {
+        var list = hopDongService.getMyContracts(auth.getName());
+        return ResponseEntity.ok(ApiResponse.ok("Success", list));
+    }
+
+    /**
+     * GET /api/hop-dong/gan-nhat?limit=5 — Lấy N hợp đồng gần nhất (cho label trang chủ)
+     */
+    @GetMapping("/gan-nhat")
+    public ResponseEntity<ApiResponse<java.util.List<HopDongSummaryResponse>>> getRecentContracts(
+            Authentication auth,
+            @RequestParam(defaultValue = "5") int limit) {
+        var list = hopDongService.getRecentContracts(auth.getName(), limit);
+        return ResponseEntity.ok(ApiResponse.ok("Success", list));
+    }
+
+    /**
+     * GET /api/hop-dong/{id}/chi-tiet — Xem chi tiết hợp đồng (xem lại hợp đồng)
+     */
+    @GetMapping("/{id}/chi-tiet")
+    public ResponseEntity<ApiResponse<HopDongDetailResponse>> getContractDetail(
+            Authentication auth,
+            @PathVariable Integer id) {
+        HopDongDetailResponse res = hopDongService.getContractDetail(auth.getName(), id);
+        return ResponseEntity.ok(ApiResponse.ok("Success", res));
+    }
+
+    /**
+     * GET /api/hop-dong/don-hang-count — Đếm số đơn hàng theo trạng thái (cho badge hồ sơ)
+     */
+    @GetMapping("/don-hang-count")
+    public ResponseEntity<ApiResponse<DonHangCountResponse>> getDonHangCount(
+            Authentication auth) {
+        DonHangCountResponse res = hopDongService.getDonHangCount(auth.getName());
+        return ResponseEntity.ok(ApiResponse.ok("Success", res));
+    }
 }
+

@@ -47,4 +47,40 @@ public interface HopDongThueRepository extends JpaRepository<HopDongThue, Intege
            "ORDER BY hd.ngayDuKienTra ASC")
     List<HopDongThue> findHopDongSapDenHan(@Param("fromDate") LocalDateTime fromDate,
                                             @Param("toDate") LocalDateTime toDate);
+
+    /**
+     * Lấy tất cả hợp đồng của khách hàng, sắp xếp theo ngày lập mới nhất
+     */
+    @Query("SELECT hd FROM HopDongThue hd " +
+           "WHERE hd.nguoiDungKhachId = :nguoiDungId " +
+           "ORDER BY hd.ngayLap DESC")
+    List<HopDongThue> findByNguoiDungKhachIdOrderByNgayLapDesc(
+            @Param("nguoiDungId") Integer nguoiDungId);
+
+    /**
+     * Lấy N hợp đồng gần nhất của khách hàng (cho label trang chủ)
+     */
+    @Query(value = "SELECT TOP :limit hd.* FROM HopDongThue hd " +
+           "WHERE hd.NguoiDungKhachID = :nguoiDungId " +
+           "ORDER BY hd.NgayLap DESC", nativeQuery = true)
+    List<HopDongThue> findTopNByNguoiDungKhachId(
+            @Param("nguoiDungId") Integer nguoiDungId,
+            @Param("limit") int limit);
+
+    /**
+     * Đếm hợp đồng theo trạng thái của 1 khách hàng
+     */
+    @Query("SELECT COUNT(hd) FROM HopDongThue hd " +
+           "WHERE hd.nguoiDungKhachId = :nguoiDungId " +
+           "AND hd.trangThaiId = :trangThaiId")
+    long countByNguoiDungKhachIdAndTrangThaiId(
+            @Param("nguoiDungId") Integer nguoiDungId,
+            @Param("trangThaiId") Integer trangThaiId);
+
+    /**
+     * Đếm tổng hợp đồng của 1 khách hàng
+     */
+    @Query("SELECT COUNT(hd) FROM HopDongThue hd " +
+           "WHERE hd.nguoiDungKhachId = :nguoiDungId")
+    long countByNguoiDungKhachId(@Param("nguoiDungId") Integer nguoiDungId);
 }

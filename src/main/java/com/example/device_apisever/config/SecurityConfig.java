@@ -65,6 +65,10 @@ public class SecurityConfig {
                 // Hợp đồng: tạo & ký chỉ Khách hàng, callback thanh toán authenticated
                 .requestMatchers("/api/hop-dong/tao").hasRole("KHACH_HANG")
                 .requestMatchers("/api/hop-dong/*/ky-ket").hasRole("KHACH_HANG")
+                .requestMatchers("/api/hop-dong/cua-toi").hasRole("KHACH_HANG")
+                .requestMatchers("/api/hop-dong/gan-nhat").hasRole("KHACH_HANG")
+                .requestMatchers("/api/hop-dong/don-hang-count").hasRole("KHACH_HANG")
+                .requestMatchers("/api/hop-dong/*/chi-tiet").hasRole("KHACH_HANG")
                 .requestMatchers("/api/hop-dong/*/xac-nhan-thanh-toan").authenticated()
                 // Điều khoản mẫu: tất cả user đã đăng nhập
                 .requestMatchers(org.springframework.http.HttpMethod.GET, "/api/dieu-khoan-mau/**").authenticated()

@@ -13,4 +13,10 @@ public interface ChiTietThueThietBiRepository extends JpaRepository<ChiTietThueT
      * Lấy tất cả chi tiết thiết bị trong 1 hợp đồng
      */
     List<ChiTietThueThietBi> findByHopDongId(Integer hopDongId);
+
+    /**
+     * Đếm số thiết bị trong 1 hợp đồng
+     */
+    long countByHopDongId(Integer hopDongId);
 }
+

@@ -1177,6 +1177,120 @@ Callback xác nhận thanh toán thành công từ cổng MoMo/ZaloPay.
   }
   ```
 
+### 16.4. Lấy danh sách hợp đồng của tôi
+Lấy danh sách tất cả hợp đồng của khách hàng (dùng cho trang Lịch sử đơn hàng).
+- **URL:** `GET /api/hop-dong/cua-toi`
+- **Headers:** `Authorization: Bearer <token>`
+- **Quyền:** KHÁCH HÀNG
+- **Response (200 OK):**
+  ```json
+  {
+      "success": true,
+      "message": "Success",
+      "data": [
+          {
+              "hopDongId": 145,
+              "maHopDong": "HD-2026-00145",
+              "trangThaiId": 1,
+              "trangThai": "Chờ ký kết",
+              "ngayLap": "2026-04-15T10:00:00",
+              "ngayBatDauThue": "2026-04-16T00:00:00",
+              "ngayDuKienTra": "2027-04-16T00:00:00",
+              "tongTienThue": 18000000.00,
+              "tienCoc": 9000000.00,
+              "soThietBi": 1,
+              "diaDiemGiao": "201B Nguyễn Chí Thanh, Quận 5"
+          }
+      ]
+  }
+  ```
+
+### 16.5. Lấy danh sách hợp đồng gần nhất (Trang chủ)
+Lấy N hợp đồng gần nhất (mặc định 5) để hiển thị trên label trang chủ.
+- **URL:** `GET /api/hop-dong/gan-nhat?limit={N}`
+- **Headers:** `Authorization: Bearer <token>`
+- **Quyền:** KHÁCH HÀNG
+- **Query Params:** `limit` (tùy chọn, mặc định 5)
+- **Response (200 OK):** Trả về danh sách tương tự 16.4.
+
+### 16.6. Xem chi tiết hợp đồng
+Lấy chi tiết đầy đủ của một hợp đồng (dùng để xem lại hợp đồng sau khi đã tạo/ký).
+- **URL:** `GET /api/hop-dong/{id}/chi-tiet`
+- **Headers:** `Authorization: Bearer <token>`
+- **Quyền:** KHÁCH HÀNG
+- **Response (200 OK):**
+  ```json
+  {
+      "success": true,
+      "message": "Success",
+      "data": {
+          "hopDongId": 145,
+          "maHopDong": "HD-2026-00145",
+          "trangThaiId": 1,
+          "trangThai": "Chờ ký kết",
+          "ngayLap": "2026-04-15T10:00:00",
+          "ngayBatDauThue": "2026-04-16T00:00:00",
+          "ngayDuKienTra": "2027-04-16T00:00:00",
+          "ngayKyDienTu": null,
+          "diaDiemGiao": "201B Nguyễn Chí Thanh, Quận 5",
+          "ghiChuKhachHang": "Giao giờ hành chính",
+          "soThangThue": 12,
+          "khachHang": {
+              "hoTen": "BS. Trọng",
+              "email": "trong@example.com",
+              "soDienThoai": "0903123456",
+              "diaChi": "123 ABC",
+              "cccd": "012345678912",
+              "cccdNgayCap": "01/01/2020",
+              "cccdNoiCap": "Cục CS QLHC",
+              "donViCongTac": "Bệnh viện Chợ Rẫy"
+          },
+          "chiTietThietBi": [
+              {
+                  "tenThietBi": "Máy thở chức năng cao VELA",
+                  "soSerial": "MT-001",
+                  "tinhTrangBanGiao": "Máy hoạt động bình thường...",
+                  "mucDichSuDung": "Phục vụ điều trị bệnh nhân",
+                  "giaTriMay": 300000000,
+                  "giaThueThang": 1500000,
+                  "ngayKiemDinh": "2026-04-01"
+              }
+          ],
+          "chiPhi": {
+              "tongTienThue": 18000000.00,
+              "tienCoc": 9000000.00,
+              "thueVAT": 1800000.00,
+              "phiTreHanPhanTram": 3.0,
+              "soNgayTreHanMoiKy": 3,
+              "soNgayViPhamChamDut": 15,
+              "phiVeSinhChuyenSau": 1000000.00,
+              "khauHaoHaoMonNam": null,
+              "phiGianDoanPhanTram": 50.0
+          }
+      }
+  }
+  ```
+
+### 16.7. Đếm số lượng đơn hàng theo trạng thái (Badge hồ sơ)
+Lấy số lượng đơn hàng theo các nhóm trạng thái để hiển thị badge trên trang Profile.
+- **URL:** `GET /api/hop-dong/don-hang-count`
+- **Headers:** `Authorization: Bearer <token>`
+- **Quyền:** KHÁCH HÀNG
+- **Response (200 OK):**
+  ```json
+  {
+      "success": true,
+      "message": "Success",
+      "data": {
+          "choXetDuyet": 1,
+          "canThanhToan": 2,
+          "choGiaoHang": 0,
+          "dangThue": 3,
+          "tongDonHang": 6
+      }
+  }
+  ```
+
 ---
 
 ## 📜 17. Điều khoản Mẫu Hợp đồng
@@ -1280,5 +1394,9 @@ Trước khi sử dụng các API mới, cần chạy script SQL migration:
 | 46 | POST | `/api/hop-dong/tao` | Tạo hợp đồng (checkout) | KHÁCH HÀNG |
 | 47 | POST | `/api/hop-dong/{id}/ky-ket` | Ký hợp đồng điện tử | KHÁCH HÀNG |
 | 48 | POST | `/api/hop-dong/{id}/xac-nhan-thanh-toan` | Xác nhận thanh toán | Authenticated |
-| 49 | GET | `/api/dieu-khoan-mau` | Lấy điều khoản mẫu HĐ | Authenticated |
+| 49 | GET | `/api/hop-dong/cua-toi` | Lấy danh sách HĐ của khách hàng | KHÁCH HÀNG |
+| 50 | GET | `/api/hop-dong/gan-nhat` | Lấy danh sách HĐ gần nhất | KHÁCH HÀNG |
+| 51 | GET | `/api/hop-dong/{id}/chi-tiet` | Xem chi tiết hợp đồng | KHÁCH HÀNG |
+| 52 | GET | `/api/hop-dong/don-hang-count` | Đếm đơn hàng theo trạng thái | KHÁCH HÀNG |
+| 53 | GET | `/api/dieu-khoan-mau` | Lấy điều khoản mẫu HĐ | Authenticated |
 | — | GET | `/uploads/qrcode/{file}.png` | Truy cập ảnh QR (static) | Public |

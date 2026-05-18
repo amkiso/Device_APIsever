@@ -274,4 +274,171 @@ public class HopDongService {
                 .maGiaoDich(req.getMaGiaoDich())
                 .build();
     }
+
+    // ─────────────────────────────────────────────────────
+    //  19. DANH SÁCH & CHI TIẾT HỢP ĐỒNG KHÁCH HÀNG
+    // ─────────────────────────────────────────────────────
+
+    /**
+     * Lấy danh sách hợp đồng của khách hàng (sắp xếp theo ngày lập mới nhất)
+     */
+    public List<HopDongSummaryResponse> getMyContracts(String taiKhoan) {
+        NguoiDung khach = resolveNguoiDung(taiKhoan);
+        List<HopDongThue> contracts = hopDongRepo
+                .findByNguoiDungKhachIdOrderByNgayLapDesc(khach.getNguoiDungId());
+
+        return contracts.stream().map(hd -> {
+            long soTB = chiTietRepo.countByHopDongId(hd.getHopDongId());
+            String maHD = String.format("HD-%d-%05d",
+                    hd.getNgayLap().getYear(), hd.getHopDongId());
+
+            return HopDongSummaryResponse.builder()
+                    .hopDongId(hd.getHopDongId())
+                    .maHopDong(maHD)
+                    .trangThaiId(hd.getTrangThaiId())
+                    .trangThai(getTrangThaiName(hd.getTrangThaiId()))
+                    .ngayLap(hd.getNgayLap())
+                    .ngayBatDauThue(hd.getNgayBatDauThue())
+                    .ngayDuKienTra(hd.getNgayDuKienTra())
+                    .tongTienThue(hd.getTongTienThue())
+                    .tienCoc(hd.getTienCoc())
+                    .soThietBi((int) soTB)
+                    .diaDiemGiao(hd.getDiaDiemGiao())
+                    .build();
+        }).toList();
+    }
+
+    /**
+     * Lấy N hợp đồng gần nhất (cho label trang chủ carousel)
+     */
+    public List<HopDongSummaryResponse> getRecentContracts(String taiKhoan, int limit) {
+        NguoiDung khach = resolveNguoiDung(taiKhoan);
+        List<HopDongThue> contracts = hopDongRepo
+                .findTopNByNguoiDungKhachId(khach.getNguoiDungId(), limit);
+
+        return contracts.stream().map(hd -> {
+            long soTB = chiTietRepo.countByHopDongId(hd.getHopDongId());
+            String maHD = String.format("HD-%d-%05d",
+                    hd.getNgayLap().getYear(), hd.getHopDongId());
+
+            return HopDongSummaryResponse.builder()
+                    .hopDongId(hd.getHopDongId())
+                    .maHopDong(maHD)
+                    .trangThaiId(hd.getTrangThaiId())
+                    .trangThai(getTrangThaiName(hd.getTrangThaiId()))
+                    .ngayLap(hd.getNgayLap())
+                    .ngayBatDauThue(hd.getNgayBatDauThue())
+                    .ngayDuKienTra(hd.getNgayDuKienTra())
+                    .tongTienThue(hd.getTongTienThue())
+                    .tienCoc(hd.getTienCoc())
+                    .soThietBi((int) soTB)
+                    .diaDiemGiao(hd.getDiaDiemGiao())
+                    .build();
+        }).toList();
+    }
+
+    /**
+     * Xem chi tiết hợp đồng (để xem lại hợp đồng đã tạo)
+     */
+    public HopDongDetailResponse getContractDetail(String taiKhoan, Integer hopDongId) {
+        NguoiDung khach = resolveNguoiDung(taiKhoan);
+        HopDongThue hd = hopDongRepo.findById(hopDongId)
+                .orElseThrow(() -> new ResourceNotFoundException("Hợp đồng không tồn tại"));
+
+        if (!hd.getNguoiDungKhachId().equals(khach.getNguoiDungId())) {
+            throw new BusinessException("Bạn không có quyền xem hợp đồng này");
+        }
+
+        String maHD = String.format("HD-%d-%05d",
+                hd.getNgayLap().getYear(), hd.getHopDongId());
+
+        // Lấy chi tiết thiết bị
+        List<ChiTietThueThietBi> chiTietList = chiTietRepo.findByHopDongId(hd.getHopDongId());
+        List<HopDongResponse.ChiTietThietBiResponse> chiTietResponses = chiTietList.stream()
+                .map(ct -> {
+                    ThietBi tb = thietBiRepo.findById(ct.getThietBiId()).orElse(null);
+                    LoaiThietBi ltb = tb != null
+                            ? loaiThietBiRepo.findById(tb.getLoaiThietBiId()).orElse(null) : null;
+
+                    return HopDongResponse.ChiTietThietBiResponse.builder()
+                            .tenThietBi(ltb != null ? ltb.getTenLoaiThietBi() : "N/A")
+                            .soSerial(tb != null ? tb.getSoSerial() : "")
+                            .tinhTrangBanGiao(ct.getTinhTrangGiao())
+                            .mucDichSuDung(tb != null ? tb.getMucDichSuDung() : "")
+                            .giaTriMay(ct.getGiaTriMay())
+                            .giaThueThang(ct.getGiaThueThang())
+                            .ngayKiemDinh(tb != null && tb.getNgayKiemDinh() != null
+                                    ? tb.getNgayKiemDinh().format(DateTimeFormatter.ISO_LOCAL_DATE) : null)
+                            .build();
+                }).toList();
+
+        // Tính số tháng thuê từ ngày bắt đầu → ngày dự kiến trả
+        int soThangThue = (int) java.time.temporal.ChronoUnit.MONTHS.between(
+                hd.getNgayBatDauThue().toLocalDate(),
+                hd.getNgayDuKienTra().toLocalDate());
+
+        // Thông tin khách hàng
+        HopDongDetailResponse.KhachHangInfo khInfo = HopDongDetailResponse.KhachHangInfo.builder()
+                .hoTen(khach.getHoTen())
+                .email(khach.getEmail())
+                .soDienThoai(khach.getSoDienThoai())
+                .diaChi(khach.getDiaChi())
+                .cccd(khach.getCccd())
+                .cccdNgayCap(khach.getCccdNgayCap() != null
+                        ? khach.getCccdNgayCap().format(DateTimeFormatter.ISO_LOCAL_DATE) : null)
+                .cccdNoiCap(khach.getCccdNoiCap())
+                .donViCongTac(khach.getDonViCongTac())
+                .build();
+
+        return HopDongDetailResponse.builder()
+                .hopDongId(hd.getHopDongId())
+                .maHopDong(maHD)
+                .trangThaiId(hd.getTrangThaiId())
+                .trangThai(getTrangThaiName(hd.getTrangThaiId()))
+                .ngayLap(hd.getNgayLap())
+                .ngayBatDauThue(hd.getNgayBatDauThue())
+                .ngayDuKienTra(hd.getNgayDuKienTra())
+                .ngayKyDienTu(hd.getNgayKyDienTu())
+                .diaDiemGiao(hd.getDiaDiemGiao())
+                .ghiChuKhachHang(hd.getGhiChuKhachHang())
+                .soThangThue(soThangThue)
+                .khachHang(khInfo)
+                .chiTietThietBi(chiTietResponses)
+                .chiPhi(HopDongResponse.ChiPhiResponse.builder()
+                        .tongTienThue(hd.getTongTienThue())
+                        .tienCoc(hd.getTienCoc())
+                        .thueVAT(hd.getThueVat())
+                        .phiTreHanPhanTram(hd.getPhiTreHanPhanTram())
+                        .soNgayTreHanMoiKy(hd.getSoNgayTreHanMoiKy())
+                        .soNgayViPhamChamDut(hd.getSoNgayViPhamChamDut())
+                        .phiVeSinhChuyenSau(hd.getPhiVeSinhChuyenSau())
+                        .khauHaoHaoMonNam(hd.getKhauHaoHaoMonNam())
+                        .phiGianDoanPhanTram(hd.getPhiGianDoanPhanTram())
+                        .build())
+                .build();
+    }
+
+    /**
+     * Đếm số đơn hàng theo trạng thái cho trang Hồ sơ
+     */
+    public DonHangCountResponse getDonHangCount(String taiKhoan) {
+        NguoiDung khach = resolveNguoiDung(taiKhoan);
+        Integer uid = khach.getNguoiDungId();
+
+        long choXetDuyet = hopDongRepo.countByNguoiDungKhachIdAndTrangThaiId(uid, 1);
+        long canThanhToan = hopDongRepo.countByNguoiDungKhachIdAndTrangThaiId(uid, 2);
+        long choGiao3 = hopDongRepo.countByNguoiDungKhachIdAndTrangThaiId(uid, 3);
+        long choGiao4 = hopDongRepo.countByNguoiDungKhachIdAndTrangThaiId(uid, 4);
+        long dangThue = hopDongRepo.countByNguoiDungKhachIdAndTrangThaiId(uid, 5);
+        long tong = hopDongRepo.countByNguoiDungKhachId(uid);
+
+        return DonHangCountResponse.builder()
+                .choXetDuyet(choXetDuyet)
+                .canThanhToan(canThanhToan)
+                .choGiaoHang(choGiao3 + choGiao4)
+                .dangThue(dangThue)
+                .tongDonHang(tong)
+                .build();
+    }
 }
+
