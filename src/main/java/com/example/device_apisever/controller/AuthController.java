@@ -1,6 +1,7 @@
 package com.example.device_apisever.controller;
 
 import com.example.device_apisever.dto.ApiResponse;
+import com.example.device_apisever.dto.CheckEmailResponse;
 import com.example.device_apisever.dto.DangKyRequest;
 import com.example.device_apisever.dto.DoiMatKhauRequest;
 import com.example.device_apisever.dto.LoginRequest;
@@ -68,6 +69,18 @@ public class AuthController {
     public ResponseEntity<ApiResponse<Void>> forgotPasswordConfirm(@Valid @RequestBody ForgotPasswordConfirmRequest request) {
         authService.forgotPasswordConfirm(request.getEmail(), request.getOtp(), request.getNewPassword());
         return ResponseEntity.ok(ApiResponse.ok("Doi mat khau thanh cong! Ban co the dang nhap bang mat khau moi.", null));
+    }
+
+    /**
+     * Kiểm tra email trước khi quên mật khẩu.
+     * Nếu là khách hàng → cho phép tự reset.
+     * Nếu là nhân viên → trả SĐT admin để liên hệ.
+     */
+    @PostMapping("/check-email-reset")
+    public ResponseEntity<ApiResponse<CheckEmailResponse>> checkEmailForReset(
+            @RequestBody ForgotPasswordInitRequest request) {
+        CheckEmailResponse response = authService.checkEmailForReset(request.getEmail());
+        return ResponseEntity.ok(ApiResponse.ok(response));
     }
 
     /**

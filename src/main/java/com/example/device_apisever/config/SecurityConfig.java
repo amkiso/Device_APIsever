@@ -34,7 +34,7 @@ public class SecurityConfig {
             .cors(cors -> cors.configurationSource(corsConfigurationSource()))
             .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
             .authorizeHttpRequests(auth -> auth
-                .requestMatchers("/api/auth/login", "/api/auth/register-init", "/api/auth/register-confirm", "/api/auth/forgot-password-init", "/api/auth/forgot-password-confirm").permitAll()
+                .requestMatchers("/api/auth/login", "/api/auth/register-init", "/api/auth/register-confirm", "/api/auth/forgot-password-init", "/api/auth/forgot-password-confirm", "/api/auth/check-email-reset").permitAll()
                 .requestMatchers("/swagger-ui/**", "/v3/api-docs/**", "/swagger-ui.html").permitAll()
                 .requestMatchers("/error").permitAll()
                 // Static QR code images — cho phép truy cập ảnh QR không cần xác thực

@@ -5,6 +5,7 @@ import com.example.device_apisever.dto.DangKyRequest;
 import com.example.device_apisever.dto.DoiMatKhauRequest;
 import com.example.device_apisever.dto.LoginRequest;
 import com.example.device_apisever.dto.LoginResponse;
+import com.example.device_apisever.dto.CheckEmailResponse;
 import com.example.device_apisever.entity.NguoiDung;
 import com.example.device_apisever.entity.VaiTro;
 import com.example.device_apisever.exception.BusinessException;
@@ -228,6 +229,42 @@ public class AuthService {
         nd.setMatKhau(passwordEncoder.encode(request.getMatKhauMoi()));
         nd.setDoiMatKhauLanDau(false); // Tắt cờ bắt đổi mật khẩu
         nguoiDungRepository.save(nd);
+    }
+
+    /**
+     * Kiểm tra email khi quên mật khẩu:
+     * - Nếu khách hàng (vaiTroId=4) → cho phép tự reset
+     * - Nếu nhân viên (vaiTroId=1,2,3) → trả SĐT admin để liên hệ
+     */
+    public CheckEmailResponse checkEmailForReset(String email) {
+        NguoiDung nd = nguoiDungRepository.findByTaiKhoan(email)
+                .orElseThrow(() -> new ResourceNotFoundException("Email khong ton tai trong he thong."));
+
+        boolean isCustomer = (nd.getVaiTroId() == 4);
+
+        if (isCustomer) {
+            return CheckEmailResponse.builder()
+                    .isCustomer(true)
+                    .vaiTroId(nd.getVaiTroId())
+                    .build();
+        } else {
+            // Lấy thông tin admin (vaiTroId=1) để hiển thị SĐT liên hệ
+            String adminPhone = null;
+            String adminName = null;
+            var admins = nguoiDungRepository.findByVaiTroId(1);
+            if (!admins.isEmpty()) {
+                NguoiDung admin = admins.get(0);
+                adminPhone = admin.getSoDienThoai();
+                adminName = admin.getHoTen();
+            }
+
+            return CheckEmailResponse.builder()
+                    .isCustomer(false)
+                    .vaiTroId(nd.getVaiTroId())
+                    .adminPhone(adminPhone != null ? adminPhone : "0123456789")
+                    .adminName(adminName != null ? adminName : "Quản trị viên")
+                    .build();
+        }
     }
 
     /**
