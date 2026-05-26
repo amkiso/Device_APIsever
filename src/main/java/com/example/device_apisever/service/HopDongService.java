@@ -31,6 +31,10 @@ public class HopDongService {
     private final ChuKyDienTuRepository chuKyRepo;
     private final ThanhToanRepository thanhToanRepo;
     private final PasswordEncoder passwordEncoder;
+    private final CauHinhHopDongRepository cauHinhRepo;
+    private final LoaiHopDongRepository loaiHopDongRepo;
+    private final ThongBaoService thongBaoService;
+    private final AzureStorageService azureStorageService;
 
     public HopDongService(HopDongThueRepository hopDongRepo,
                           NguoiDungRepository nguoiDungRepo,
@@ -42,7 +46,11 @@ public class HopDongService {
                           TrangThaiHopDongRepository trangThaiRepo,
                           ChuKyDienTuRepository chuKyRepo,
                           ThanhToanRepository thanhToanRepo,
-                          PasswordEncoder passwordEncoder) {
+                          PasswordEncoder passwordEncoder,
+                          CauHinhHopDongRepository cauHinhRepo,
+                          LoaiHopDongRepository loaiHopDongRepo,
+                          ThongBaoService thongBaoService,
+                          AzureStorageService azureStorageService) {
         this.hopDongRepo = hopDongRepo;
         this.nguoiDungRepo = nguoiDungRepo;
         this.thietBiRepo = thietBiRepo;
@@ -54,6 +62,10 @@ public class HopDongService {
         this.chuKyRepo = chuKyRepo;
         this.thanhToanRepo = thanhToanRepo;
         this.passwordEncoder = passwordEncoder;
+        this.cauHinhRepo = cauHinhRepo;
+        this.loaiHopDongRepo = loaiHopDongRepo;
+        this.thongBaoService = thongBaoService;
+        this.azureStorageService = azureStorageService;
     }
 
     private NguoiDung resolveNguoiDung(String taiKhoan) {
@@ -66,8 +78,16 @@ public class HopDongService {
                 .map(TrangThaiHopDong::getTenTrangThai).orElse("Không xác định");
     }
 
+    private String getLoaiHopDongName(Integer id) {
+        if (id == null) return "Cá nhân";
+        return loaiHopDongRepo.findById(id)
+                .map(LoaiHopDong::getTenLoai).orElse("Cá nhân");
+    }
+
     /**
-     * Tạo hợp đồng mới từ checkout
+     * Tạo hợp đồng mới từ checkout.
+     * Trạng thái khởi tạo: 1 (Chờ xác nhận).
+     * Tự động phân loại: Cá nhân / Doanh nghiệp / Hỏa tốc.
      */
     @Transactional
     public HopDongResponse taoHopDong(String taiKhoan, TaoHopDongRequest req) {
@@ -87,6 +107,20 @@ public class HopDongService {
 
         // Build địa chỉ giao dạng text
         String diaChiText = dc.getDiaChiChiTiet() + ", " + dc.getPhuongXa() + ", " + dc.getTinhThanhPho();
+
+        // ── Phân loại hợp đồng ──
+        boolean isDoanhNghiep = khach.getLoaiKhachHangId() != null && khach.getLoaiKhachHangId() == 2;
+        boolean isHoaToc = ngayBD.equals(LocalDate.now());
+
+        // Lấy cấu hình phí hỏa tốc (%)
+        BigDecimal phiHoaTocPhanTram = cauHinhRepo.findByMaCauHinh("PHI_HOA_TOC")
+                .map(CauHinhHopDong::getGiaTri).orElse(new BigDecimal("10"));
+
+        // Lấy hạn thanh toán (ngày trước ngày bắt đầu)
+        BigDecimal hanTTNgay = cauHinhRepo.findByMaCauHinh("HAN_THANH_TOAN_NGAY")
+                .map(CauHinhHopDong::getGiaTri).orElse(new BigDecimal("2"));
+
+        int loaiHopDongId = isHoaToc ? 3 : (isDoanhNghiep ? 2 : 1);
 
         // Xử lý danh sách thiết bị và tính tiền
         BigDecimal tongTienThue = BigDecimal.ZERO;
@@ -131,16 +165,25 @@ public class HopDongService {
                                 ? tb.getNgayKiemDinh().format(DateTimeFormatter.ISO_LOCAL_DATE) : null)
                         .build());
 
-                // Đánh dấu thiết bị đang cho thuê
-                tb.setTinhTrangId(2);
-                thietBiRepo.save(tb);
+                // KHÔNG đánh dấu thiết bị đang cho thuê ở bước tạo (chờ NV xác nhận mới gán)
+                // tb.setTinhTrangId(2); — đã bỏ
             }
         }
+
+        // Tính phí hỏa tốc
+        BigDecimal phiHoaToc = isHoaToc
+                ? tongTienThue.multiply(phiHoaTocPhanTram).divide(BigDecimal.valueOf(100), 2, RoundingMode.HALF_UP)
+                : BigDecimal.ZERO;
 
         // Tính tiền cọc = 50% tổng tiền thuê
         BigDecimal tienCoc = tongTienThue.divide(BigDecimal.valueOf(2), 2, RoundingMode.HALF_UP);
         BigDecimal thueVAT = tongTienThue.multiply(new BigDecimal("0.1"))
                 .setScale(2, RoundingMode.HALF_UP);
+
+        // Tính hạn thanh toán
+        LocalDateTime hanThanhToan = isHoaToc
+                ? LocalDateTime.now().plusHours(12)
+                : ngayBatDau.minusDays(hanTTNgay.intValue());
 
         // Tạo hợp đồng
         HopDongThue hd = HopDongThue.builder()
@@ -152,12 +195,17 @@ public class HopDongService {
                 .tienCoc(tienCoc)
                 .tongTienThue(tongTienThue)
                 .phiBoiThuong(BigDecimal.ZERO)
-                .trangThaiId(1) // Chờ ký kết
+                .trangThaiId(1) // Chờ xác nhận
                 .nguonTao(2) // Khách tạo qua app
                 .diaChiGiaoId(req.getDiaChiGiaoId())
                 .phuongThucThanhToan(req.getPhuongThucThanhToan())
                 .thueVat(thueVAT)
                 .ghiChuKhachHang(req.getGhiChuKhachHang())
+                // Phân loại & Hỏa tốc
+                .loaiHopDongId(loaiHopDongId)
+                .laHoaToc(isHoaToc)
+                .phiHoaToc(phiHoaToc)
+                .hanThanhToan(hanThanhToan)
                 .build();
 
         hopDongRepo.save(hd);
@@ -174,6 +222,25 @@ public class HopDongService {
         // Build mã hợp đồng
         String maHD = String.format("HD-%d-%05d",
                 LocalDate.now().getYear(), hd.getHopDongId());
+
+        // ── Gửi thông báo hỏa tốc đến tất cả nhân viên ──
+        if (isHoaToc) {
+            try {
+                // Gửi cho vai trò 1 (Admin), 2 (Thủ kho), 3 (Kỹ thuật)
+                for (int vaiTro : new int[]{1, 2, 3}) {
+                    ThongBaoRequest tbRequest = new ThongBaoRequest();
+                    tbRequest.setTieuDe("🔥 Đơn hỏa tốc mới: " + maHD);
+                    tbRequest.setNoiDung("Khách hàng " + khach.getHoTen()
+                            + " đặt đơn hỏa tốc cần xử lý ngay! Số thiết bị: "
+                            + chiTietList.size());
+                    tbRequest.setLoaiThongBao(2); // By role
+                    tbRequest.setVaiTroNhanId(vaiTro);
+                    thongBaoService.taoThongBao(tbRequest, khach.getNguoiDungId());
+                }
+            } catch (Exception e) {
+                // Không để lỗi thông báo ảnh hưởng tạo hợp đồng
+            }
+        }
 
         return HopDongResponse.builder()
                 .hopDongId(hd.getHopDongId())
@@ -195,7 +262,7 @@ public class HopDongService {
     }
 
     /**
-     * Ký hợp đồng điện tử
+     * Ký hợp đồng điện tử — upload chữ ký lên Azure Blob (Private).
      */
     @Transactional
     public KyHopDongResponse kyHopDong(String taiKhoan, Integer hopDongId,
@@ -212,11 +279,15 @@ public class HopDongService {
             throw new BusinessException("Hợp đồng không ở trạng thái chờ ký kết");
         }
 
-        // Lưu chữ ký điện tử
+        // Sinh tên file duy nhất và upload lên Azure container "sign"
+        String fileName = azureStorageService.generateFileName("png");
+        azureStorageService.uploadByteData("sign", fileName, chuKyData, "image/png");
+
+        // Lưu tên file vào DB (thay vì byte[])
         ChuKyDienTu ck = ChuKyDienTu.builder()
                 .hopDongId(hopDongId)
                 .nguoiDungId(khach.getNguoiDungId())
-                .duLieuChuKy(chuKyData)
+                .tenFileChuKy(fileName)
                 .maPinHash(passwordEncoder.encode(maPin))
                 .ipAddress(ipAddress)
                 .thietBiKy(thietBiKy)
@@ -224,7 +295,7 @@ public class HopDongService {
         chuKyRepo.save(ck);
 
         // Cập nhật trạng thái hợp đồng
-        hd.setTrangThaiId(2); // Đã ký - Chờ thanh toán
+        hd.setTrangThaiId(2); // Đã xác nhận - Chờ thanh toán cọc
         hd.setNgayKyDienTu(LocalDateTime.now());
         hd.setMaPinXacNhan(passwordEncoder.encode(maPin));
         hopDongRepo.save(hd);
@@ -233,8 +304,133 @@ public class HopDongService {
                 .hopDongId(hopDongId)
                 .trangThai(getTrangThaiName(2))
                 .ngayKy(hd.getNgayKyDienTu())
-                .urlThanhToan(null) // Placeholder - tích hợp cổng thanh toán sau
+                .urlThanhToan(null)
                 .build();
+    }
+
+    /**
+     * Khách hàng hủy hợp đồng — chỉ cho phép khi trạng thái = 1 (Chờ xác nhận).
+     */
+    @Transactional
+    public void huyHopDong(String taiKhoan, Integer hopDongId, String lyDoHuy) {
+        NguoiDung khach = resolveNguoiDung(taiKhoan);
+        HopDongThue hd = hopDongRepo.findById(hopDongId)
+                .orElseThrow(() -> new ResourceNotFoundException("Hợp đồng không tồn tại"));
+
+        if (!hd.getNguoiDungKhachId().equals(khach.getNguoiDungId())) {
+            throw new BusinessException("Bạn không có quyền hủy hợp đồng này");
+        }
+        if (hd.getTrangThaiId() != 1) {
+            throw new BusinessException("Chỉ có thể hủy hợp đồng ở trạng thái 'Chờ xác nhận'");
+        }
+
+        hd.setTrangThaiId(7); // Đã hủy bởi khách hàng
+        hd.setLyDoHuy(lyDoHuy != null ? lyDoHuy : "Khách hàng tự hủy");
+        hopDongRepo.save(hd);
+    }
+
+    /**
+     * Gửi yêu cầu hỗ trợ / bảo trì — tạo thông báo đến nhân viên.
+     */
+    public void guiYeuCauHoTro(String taiKhoan, Integer hopDongId, YeuCauHoTroRequest request) {
+        NguoiDung khach = resolveNguoiDung(taiKhoan);
+        HopDongThue hd = hopDongRepo.findById(hopDongId)
+                .orElseThrow(() -> new ResourceNotFoundException("Hợp đồng không tồn tại"));
+
+        if (!hd.getNguoiDungKhachId().equals(khach.getNguoiDungId())) {
+            throw new BusinessException("Bạn không có quyền thao tác hợp đồng này");
+        }
+
+        // Yêu cầu bảo trì chỉ khi đang cho thuê (trạng thái 4)
+        if (request.getLoaiYeuCau() != null && request.getLoaiYeuCau() == 2 && hd.getTrangThaiId() != 4) {
+            throw new BusinessException("Chỉ có thể yêu cầu bảo trì khi hợp đồng đang cho thuê");
+        }
+
+        String maHD = String.format("HD-%d-%05d", hd.getNgayLap().getYear(), hd.getHopDongId());
+        String loaiStr = (request.getLoaiYeuCau() != null && request.getLoaiYeuCau() == 2) ? "Bảo trì" : "Hỗ trợ";
+
+        // Gửi thông báo đến tất cả nhân viên (role 1, 2, 3)
+        for (int vaiTro : new int[]{1, 2, 3}) {
+            try {
+                ThongBaoRequest tbRequest = new ThongBaoRequest();
+                tbRequest.setTieuDe("📋 Yêu cầu " + loaiStr + ": " + maHD);
+                tbRequest.setNoiDung("Khách hàng " + khach.getHoTen() + " yêu cầu "
+                        + loaiStr.toLowerCase() + " cho hợp đồng " + maHD + ": "
+                        + (request.getNoiDung() != null ? request.getNoiDung() : ""));
+                tbRequest.setLoaiThongBao(2);
+                tbRequest.setVaiTroNhanId(vaiTro);
+                thongBaoService.taoThongBao(tbRequest, khach.getNguoiDungId());
+            } catch (Exception e) {
+                // Không để lỗi thông báo ảnh hưởng
+            }
+        }
+    }
+
+    /**
+     * Thanh toán demo — bất kỳ phương thức nào cũng đều chấp nhận.
+     * - Trạng thái 2 (Chờ TT cọc) → 3 (Chờ nhận thiết bị)
+     * - Trạng thái 10 (Chờ TT nợ) → 12 (Hoàn tất)
+     */
+    @Transactional
+    public XacNhanThanhToanResponse thanhToanDemo(String taiKhoan, Integer hopDongId) {
+        NguoiDung khach = resolveNguoiDung(taiKhoan);
+        HopDongThue hd = hopDongRepo.findById(hopDongId)
+                .orElseThrow(() -> new ResourceNotFoundException("Hợp đồng không tồn tại"));
+
+        if (!hd.getNguoiDungKhachId().equals(khach.getNguoiDungId())) {
+            throw new BusinessException("Bạn không có quyền thao tác hợp đồng này");
+        }
+
+        // Thanh toán cọc (trạng thái 2 → 3)
+        if (hd.getTrangThaiId() == 2) {
+            ThanhToan tt = ThanhToan.builder()
+                    .hopDongId(hopDongId)
+                    .phuongThuc(hd.getPhuongThucThanhToan() != null ? hd.getPhuongThucThanhToan() : 1)
+                    .loaiThanhToan(1) // Cọc
+                    .maGiaoDich("DEMO-" + System.currentTimeMillis())
+                    .soTien(hd.getTienCoc())
+                    .trangThai(1) // Success
+                    .ngayThanhToan(LocalDateTime.now())
+                    .build();
+            thanhToanRepo.save(tt);
+
+            hd.setTrangThaiId(3); // Chờ nhận thiết bị
+            hopDongRepo.save(hd);
+
+            return XacNhanThanhToanResponse.builder()
+                    .hopDongId(hopDongId)
+                    .trangThai(getTrangThaiName(3))
+                    .maGiaoDich(tt.getMaGiaoDich())
+                    .build();
+        }
+        // Thanh toán nợ (trạng thái 10 → 12)
+        else if (hd.getTrangThaiId() == 10) {
+            BigDecimal soTienNo = hd.getTongTienThue()
+                    .add(hd.getPhiBoiThuong())
+                    .subtract(hd.getTienCoc());
+
+            ThanhToan tt = ThanhToan.builder()
+                    .hopDongId(hopDongId)
+                    .phuongThuc(hd.getPhuongThucThanhToan() != null ? hd.getPhuongThucThanhToan() : 1)
+                    .loaiThanhToan(3) // Phí phát sinh
+                    .maGiaoDich("DEMO-DEBT-" + System.currentTimeMillis())
+                    .soTien(soTienNo)
+                    .trangThai(1) // Success
+                    .ngayThanhToan(LocalDateTime.now())
+                    .build();
+            thanhToanRepo.save(tt);
+
+            hd.setTrangThaiId(12); // Hoàn tất
+            hopDongRepo.save(hd);
+
+            return XacNhanThanhToanResponse.builder()
+                    .hopDongId(hopDongId)
+                    .trangThai(getTrangThaiName(12))
+                    .maGiaoDich(tt.getMaGiaoDich())
+                    .build();
+        } else {
+            throw new BusinessException("Hợp đồng không ở trạng thái cần thanh toán");
+        }
     }
 
     /**
@@ -264,7 +460,7 @@ public class HopDongService {
 
         // Nếu thanh toán thành công
         if (req.getTrangThai() == 1) {
-            hd.setTrangThaiId(3); // Đã thanh toán - Chờ phê duyệt
+            hd.setTrangThaiId(3); // Chờ nhận thiết bị
             hopDongRepo.save(hd);
         }
 
@@ -287,25 +483,7 @@ public class HopDongService {
         List<HopDongThue> contracts = hopDongRepo
                 .findByNguoiDungKhachIdOrderByNgayLapDesc(khach.getNguoiDungId());
 
-        return contracts.stream().map(hd -> {
-            long soTB = chiTietRepo.countByHopDongId(hd.getHopDongId());
-            String maHD = String.format("HD-%d-%05d",
-                    hd.getNgayLap().getYear(), hd.getHopDongId());
-
-            return HopDongSummaryResponse.builder()
-                    .hopDongId(hd.getHopDongId())
-                    .maHopDong(maHD)
-                    .trangThaiId(hd.getTrangThaiId())
-                    .trangThai(getTrangThaiName(hd.getTrangThaiId()))
-                    .ngayLap(hd.getNgayLap())
-                    .ngayBatDauThue(hd.getNgayBatDauThue())
-                    .ngayDuKienTra(hd.getNgayDuKienTra())
-                    .tongTienThue(hd.getTongTienThue())
-                    .tienCoc(hd.getTienCoc())
-                    .soThietBi((int) soTB)
-                    .diaDiemGiao(hd.getDiaDiemGiao())
-                    .build();
-        }).toList();
+        return contracts.stream().map(this::buildSummaryResponse).toList();
     }
 
     /**
@@ -317,25 +495,31 @@ public class HopDongService {
                 .findTopNByNguoiDungKhachId(khach.getNguoiDungId(),
                         org.springframework.data.domain.PageRequest.of(0, limit));
 
-        return contracts.stream().map(hd -> {
-            long soTB = chiTietRepo.countByHopDongId(hd.getHopDongId());
-            String maHD = String.format("HD-%d-%05d",
-                    hd.getNgayLap().getYear(), hd.getHopDongId());
+        return contracts.stream().map(this::buildSummaryResponse).toList();
+    }
 
-            return HopDongSummaryResponse.builder()
-                    .hopDongId(hd.getHopDongId())
-                    .maHopDong(maHD)
-                    .trangThaiId(hd.getTrangThaiId())
-                    .trangThai(getTrangThaiName(hd.getTrangThaiId()))
-                    .ngayLap(hd.getNgayLap())
-                    .ngayBatDauThue(hd.getNgayBatDauThue())
-                    .ngayDuKienTra(hd.getNgayDuKienTra())
-                    .tongTienThue(hd.getTongTienThue())
-                    .tienCoc(hd.getTienCoc())
-                    .soThietBi((int) soTB)
-                    .diaDiemGiao(hd.getDiaDiemGiao())
-                    .build();
-        }).toList();
+    /** Helper — Build summary response cho 1 hợp đồng */
+    private HopDongSummaryResponse buildSummaryResponse(HopDongThue hd) {
+        long soTB = chiTietRepo.countByHopDongId(hd.getHopDongId());
+        String maHD = String.format("HD-%d-%05d",
+                hd.getNgayLap().getYear(), hd.getHopDongId());
+
+        return HopDongSummaryResponse.builder()
+                .hopDongId(hd.getHopDongId())
+                .maHopDong(maHD)
+                .trangThaiId(hd.getTrangThaiId())
+                .trangThai(getTrangThaiName(hd.getTrangThaiId()))
+                .ngayLap(hd.getNgayLap())
+                .ngayBatDauThue(hd.getNgayBatDauThue())
+                .ngayDuKienTra(hd.getNgayDuKienTra())
+                .tongTienThue(hd.getTongTienThue())
+                .tienCoc(hd.getTienCoc())
+                .soThietBi((int) soTB)
+                .diaDiemGiao(hd.getDiaDiemGiao())
+                .laHoaToc(hd.getLaHoaToc())
+                .loaiHopDong(getLoaiHopDongName(hd.getLoaiHopDongId()))
+                .hanThanhToan(hd.getHanThanhToan())
+                .build();
     }
 
     /**
@@ -403,6 +587,15 @@ public class HopDongService {
                 .diaDiemGiao(hd.getDiaDiemGiao())
                 .ghiChuKhachHang(hd.getGhiChuKhachHang())
                 .soThangThue(soThangThue)
+                // Phân loại & Hỏa tốc
+                .laHoaToc(hd.getLaHoaToc())
+                .loaiHopDong(getLoaiHopDongName(hd.getLoaiHopDongId()))
+                .phiHoaToc(hd.getPhiHoaToc())
+                .hanThanhToan(hd.getHanThanhToan())
+                .lyDoHuy(hd.getLyDoHuy())
+                .phiPhatSinh(hd.getPhiBoiThuong())
+                .phuongThucThanhToan(hd.getPhuongThucThanhToan())
+                // Khách hàng & chi tiết
                 .khachHang(khInfo)
                 .chiTietThietBi(chiTietResponses)
                 .chiPhi(HopDongResponse.ChiPhiResponse.builder()
@@ -426,20 +619,18 @@ public class HopDongService {
         NguoiDung khach = resolveNguoiDung(taiKhoan);
         Integer uid = khach.getNguoiDungId();
 
-        long choXetDuyet = hopDongRepo.countByNguoiDungKhachIdAndTrangThaiId(uid, 1);
+        long choXacNhan = hopDongRepo.countByNguoiDungKhachIdAndTrangThaiId(uid, 1);
         long canThanhToan = hopDongRepo.countByNguoiDungKhachIdAndTrangThaiId(uid, 2);
-        long choGiao3 = hopDongRepo.countByNguoiDungKhachIdAndTrangThaiId(uid, 3);
-        long choGiao4 = hopDongRepo.countByNguoiDungKhachIdAndTrangThaiId(uid, 4);
-        long dangThue = hopDongRepo.countByNguoiDungKhachIdAndTrangThaiId(uid, 5);
+        long choNhanTB = hopDongRepo.countByNguoiDungKhachIdAndTrangThaiId(uid, 3);
+        long dangThue = hopDongRepo.countByNguoiDungKhachIdAndTrangThaiId(uid, 4);
         long tong = hopDongRepo.countByNguoiDungKhachId(uid);
 
         return DonHangCountResponse.builder()
-                .choXetDuyet(choXetDuyet)
+                .choXetDuyet(choXacNhan)
                 .canThanhToan(canThanhToan)
-                .choGiaoHang(choGiao3 + choGiao4)
+                .choGiaoHang(choNhanTB)
                 .dangThue(dangThue)
                 .tongDonHang(tong)
                 .build();
     }
 }
-

@@ -109,5 +109,41 @@ public class HopDongController {
         DonHangCountResponse res = hopDongService.getDonHangCount(auth.getName());
         return ResponseEntity.ok(ApiResponse.ok("Success", res));
     }
+
+    /**
+     * POST /api/hop-dong/{id}/huy — Khách hàng hủy hợp đồng (chỉ khi chờ xác nhận)
+     */
+    @PostMapping("/{id}/huy")
+    public ResponseEntity<ApiResponse<Void>> huyHopDong(
+            Authentication auth,
+            @PathVariable Integer id,
+            @RequestBody(required = false) HuyHopDongRequest request) {
+        String lyDo = request != null ? request.getLyDoHuy() : "Khách hàng tự hủy";
+        hopDongService.huyHopDong(auth.getName(), id, lyDo);
+        return ResponseEntity.ok(ApiResponse.ok("Hủy hợp đồng thành công", null));
+    }
+
+    /**
+     * POST /api/hop-dong/{id}/yeu-cau-ho-tro — Gửi yêu cầu hỗ trợ / bảo trì
+     */
+    @PostMapping("/{id}/yeu-cau-ho-tro")
+    public ResponseEntity<ApiResponse<Void>> yeuCauHoTro(
+            Authentication auth,
+            @PathVariable Integer id,
+            @RequestBody YeuCauHoTroRequest request) {
+        hopDongService.guiYeuCauHoTro(auth.getName(), id, request);
+        return ResponseEntity.ok(ApiResponse.ok("Đã gửi yêu cầu hỗ trợ", null));
+    }
+
+    /**
+     * POST /api/hop-dong/{id}/thanh-toan-demo — Demo thanh toán (cọc hoặc nợ)
+     */
+    @PostMapping("/{id}/thanh-toan-demo")
+    public ResponseEntity<ApiResponse<XacNhanThanhToanResponse>> thanhToanDemo(
+            Authentication auth,
+            @PathVariable Integer id) {
+        XacNhanThanhToanResponse res = hopDongService.thanhToanDemo(auth.getName(), id);
+        return ResponseEntity.ok(ApiResponse.ok("Thanh toán thành công", res));
+    }
 }
 

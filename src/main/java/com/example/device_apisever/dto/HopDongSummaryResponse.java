@@ -22,4 +22,7 @@ public class HopDongSummaryResponse {
     private BigDecimal tienCoc;
     private Integer soThietBi;
     private String diaDiemGiao;
+    private Boolean laHoaToc;
+    private String loaiHopDong;
+    private LocalDateTime hanThanhToan;
 }

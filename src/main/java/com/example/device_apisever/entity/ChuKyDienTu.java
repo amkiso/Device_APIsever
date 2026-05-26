@@ -23,9 +23,8 @@ public class ChuKyDienTu {
     @Column(name = "NguoiDungID", nullable = false)
     private Integer nguoiDungId;
 
-    @Lob
-    @Column(name = "DuLieuChuKy", nullable = false)
-    private byte[] duLieuChuKy;
+    @Column(name = "TenFileChuKy", nullable = false, length = 255)
+    private String tenFileChuKy;
 
     @Column(name = "MaPinHash", nullable = false, length = 255)
     private String maPinHash;

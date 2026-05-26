@@ -24,6 +24,15 @@ public class HopDongDetailResponse {
     private String ghiChuKhachHang;
     private Integer soThangThue;
 
+    // Phân loại & Hỏa tốc
+    private Boolean laHoaToc;
+    private String loaiHopDong;
+    private BigDecimal phiHoaToc;
+    private LocalDateTime hanThanhToan;
+    private String lyDoHuy;
+    private BigDecimal phiPhatSinh;
+    private Integer phuongThucThanhToan;
+
     // Thông tin khách hàng (Bên B)
     private KhachHangInfo khachHang;
 

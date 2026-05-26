@@ -34,12 +34,14 @@ public class AzureStorageService {
     public AzureStorageService(BlobServiceClient blobServiceClient,
                                @Value("${azure.storage.container.user}") String userContainer,
                                @Value("${azure.storage.container.products}") String productsContainer,
-                               @Value("${azure.storage.container.work}") String workContainer) {
+                               @Value("${azure.storage.container.work}") String workContainer,
+                               @Value("${azure.storage.container.sign:sign}") String signContainer) {
         this.blobServiceClient = blobServiceClient;
         this.containerMap = Map.of(
                 "user", userContainer,
                 "products", productsContainer,
-                "work", workContainer
+                "work", workContainer,
+                "sign", signContainer
         );
     }
 
@@ -58,7 +60,7 @@ public class AzureStorageService {
         String container = containerMap.get(category.toLowerCase());
         if (container == null) {
             throw new IllegalArgumentException(
-                    "Category khong hop le: '" + category + "'. Chi chap nhan: user, products, work");
+                    "Category khong hop le: '" + category + "'. Chi chap nhan: user, products, work, sign");
         }
         return container;
     }
@@ -152,7 +154,7 @@ public class AzureStorageService {
     /**
      * Xóa blob trên Azure (dùng khi cần xóa ảnh cũ).
      *
-     * @param category loại ảnh: "user", "products", hoặc "work"
+     * @param category loại ảnh: "user", "products", "work", "sign"
      * @param fileName tên file cần xóa
      */
     public void deleteBlob(String category, String fileName) {
@@ -161,6 +163,65 @@ public class AzureStorageService {
         BlobClient blobClient = containerClient.getBlobClient(fileName);
         if (blobClient.exists()) {
             blobClient.delete();
+        }
+    }
+
+    // ========================================================================================
+    // SAS TOKEN — ĐỌC (READ) — Dùng cho file bảo mật (chữ ký, tài liệu nhạy cảm)
+    // ========================================================================================
+
+    /**
+     * Tạo SAS URL để ĐỌC (Read) file an toàn từ container Private.
+     * URL chỉ có giá trị truy cập trong vòng 5 phút.
+     *
+     * @param category loại file: "sign" (hoặc container private khác)
+     * @param fileName tên file trên Azure
+     * @return URL tạm thời có SAS token, hết hạn sau 5 phút
+     */
+    public String generateSasReadUrl(String category, String fileName) {
+        String containerName = resolveContainerName(category);
+        BlobContainerClient containerClient = blobServiceClient.getBlobContainerClient(containerName);
+        BlobClient blobClient = containerClient.getBlobClient(fileName);
+
+        BlobSasPermission permissions = new BlobSasPermission().setReadPermission(true);
+        BlobServiceSasSignatureValues sasValues = new BlobServiceSasSignatureValues(
+                OffsetDateTime.now().plusMinutes(5),
+                permissions
+        );
+
+        String sasToken = blobClient.generateSas(sasValues);
+        return blobClient.getBlobUrl() + "?" + sasToken;
+    }
+
+    // ========================================================================================
+    // UPLOAD TỪ BACKEND — Dùng khi file nhạy cảm được gửi qua API server
+    // ========================================================================================
+
+    /**
+     * Upload trực tiếp mảng byte lên Azure từ Backend.
+     * Dùng cho file nhạy cảm (chữ ký) mà App đẩy lên Server trước.
+     *
+     * @param category    loại file: "sign", "work", ...
+     * @param fileName    tên file trên Azure
+     * @param data        dữ liệu byte cần upload
+     * @param contentType MIME type (ví dụ: "image/png")
+     * @return tên file đã upload
+     */
+    public String uploadByteData(String category, String fileName, byte[] data, String contentType) {
+        String containerName = resolveContainerName(category);
+        BlobContainerClient containerClient = blobServiceClient.getBlobContainerClient(containerName);
+        BlobClient blobClient = containerClient.getBlobClient(fileName);
+
+        try (java.io.ByteArrayInputStream dataStream = new java.io.ByteArrayInputStream(data)) {
+            blobClient.upload(dataStream, data.length, true);
+
+            com.azure.storage.blob.models.BlobHttpHeaders headers = new com.azure.storage.blob.models.BlobHttpHeaders();
+            headers.setContentType(contentType);
+            blobClient.setHttpHeaders(headers);
+
+            return fileName;
+        } catch (Exception e) {
+            throw new RuntimeException("Lỗi khi upload file lên Azure Blob: " + e.getMessage(), e);
         }
     }
 

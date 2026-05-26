@@ -8,8 +8,11 @@ import java.time.LocalDateTime;
 /**
  * Hợp đồng thuê thiết bị.
  * NguonTao: 1 = nhân viên tạo thay, 2 = khách hàng tự tạo qua app.
- * Vòng đời: Chờ duyệt(1) → Chờ giao(2) → Đang thuê(3) → Chờ thanh toán(4) → Đã hoàn thành(5)
- *           Hoặc: Đã từ chối(6) / Đã hủy(7)
+ * Vòng đời trạng thái:
+ *   1=Chờ xác nhận → 2=Đã XN-Chờ TT cọc → 3=Chờ nhận TB → 4=Đang cho thuê
+ *   → 8=Đã thu hồi TB → 9=Đang kiểm tra → 10=Chờ TT nợ → 12=Hoàn tất
+ *   Nhánh hủy: 7=Đã hủy bởi KH, 11=Đã hủy, 6=Quá hạn TT, 5=Vi phạm chấm dứt
+ * LoaiHopDong: 1=Cá nhân, 2=Doanh nghiệp, 3=Hỏa tốc
  */
 @Entity
 @Table(name = "HopDongThue")
@@ -97,6 +100,22 @@ public class HopDongThue {
     @Column(name = "MaPinXacNhan", length = 255)
     private String maPinXacNhan;
 
+    // ── Phân loại & Hỏa tốc ──
+    @Column(name = "LoaiHopDongID")
+    private Integer loaiHopDongId;
+
+    @Column(name = "LaHoaToc", nullable = false)
+    private Boolean laHoaToc;
+
+    @Column(name = "PhiHoaToc", precision = 18, scale = 2)
+    private BigDecimal phiHoaToc;
+
+    @Column(name = "HanThanhToan")
+    private LocalDateTime hanThanhToan;
+
+    @Column(name = "LyDoHuy", length = 500)
+    private String lyDoHuy;
+
     @PrePersist
     protected void onCreate() {
         if (ngayLap == null) ngayLap = LocalDateTime.now();
@@ -111,5 +130,7 @@ public class HopDongThue {
         if (soNgayViPhamChamDut == null) soNgayViPhamChamDut = 15;
         if (phiVeSinhChuyenSau == null) phiVeSinhChuyenSau = new BigDecimal("1000000");
         if (phiGianDoanPhanTram == null) phiGianDoanPhanTram = new BigDecimal("50.0");
+        if (laHoaToc == null) laHoaToc = false;
+        if (phiHoaToc == null) phiHoaToc = BigDecimal.ZERO;
     }
 }

@@ -69,6 +69,9 @@ public class SecurityConfig {
                 .requestMatchers("/api/hop-dong/gan-nhat").hasRole("KHACH_HANG")
                 .requestMatchers("/api/hop-dong/don-hang-count").hasRole("KHACH_HANG")
                 .requestMatchers("/api/hop-dong/*/chi-tiet").hasRole("KHACH_HANG")
+                .requestMatchers("/api/hop-dong/*/huy").hasRole("KHACH_HANG")
+                .requestMatchers("/api/hop-dong/*/yeu-cau-ho-tro").hasRole("KHACH_HANG")
+                .requestMatchers("/api/hop-dong/*/thanh-toan-demo").hasRole("KHACH_HANG")
                 .requestMatchers("/api/hop-dong/*/xac-nhan-thanh-toan").authenticated()
                 // Điều khoản mẫu: tất cả user đã đăng nhập
                 .requestMatchers(org.springframework.http.HttpMethod.GET, "/api/dieu-khoan-mau/**").authenticated()
