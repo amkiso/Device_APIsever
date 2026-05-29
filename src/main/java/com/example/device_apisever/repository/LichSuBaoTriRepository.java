@@ -25,4 +25,9 @@ public interface LichSuBaoTriRepository extends JpaRepository<LichSuBaoTri, Inte
            "WHERE bt.trangThaiId = 1 " +
            "AND CAST(bt.ngayThucHien AS date) = CAST(:today AS date)")
     List<LichSuBaoTri> findBaoTriHomNay(@Param("today") LocalDateTime today);
+
+    /**
+     * Lấy lịch sử bảo trì theo thiết bị (mới nhất trước)
+     */
+    List<LichSuBaoTri> findByThietBiIdOrderByNgayThucHienDesc(Integer thietBiId);
 }

@@ -82,4 +82,43 @@ public class ThietBiController {
         thietBiService.deleteById(id);
         return ResponseEntity.ok(ApiResponse.ok("Da xoa thiet bi ID: " + id, null));
     }
+
+    /**
+     * Lấy danh sách hợp đồng mà thiết bị đã tham gia
+     */
+    @GetMapping("/{id}/hop-dong")
+    public ResponseEntity<ApiResponse<java.util.List<com.example.device_apisever.entity.HopDongThue>>> getHopDongsByThietBi(@PathVariable Integer id) {
+        return ResponseEntity.ok(ApiResponse.ok(thietBiService.getDeviceContracts(id)));
+    }
+
+    /**
+     * Lấy lịch sử bảo trì của thiết bị
+     */
+    @GetMapping("/{id}/lich-su-bao-tri")
+    public ResponseEntity<ApiResponse<java.util.List<com.example.device_apisever.entity.LichSuBaoTri>>> getLichSuBaoTriByThietBi(@PathVariable Integer id) {
+        return ResponseEntity.ok(ApiResponse.ok(thietBiService.getMaintenanceHistory(id)));
+    }
+
+    /**
+     * Cập nhật trạng thái của thiết bị
+     * body: {"tinhTrangId": 3} (1=Sẵn sàng, 3=Đang bảo trì)
+     */
+    @PutMapping("/{id}/cap-nhat-tinh-trang")
+    public ResponseEntity<ApiResponse<ThietBi>> updateTinhTrang(
+            @PathVariable Integer id,
+            @RequestBody java.util.Map<String, Integer> body) {
+        Integer tinhTrangId = body.get("tinhTrangId");
+        if (tinhTrangId == null) {
+            return ResponseEntity.badRequest().body(ApiResponse.error("Thiếu tinhTrangId"));
+        }
+        
+        try {
+            ThietBi updatedTb = thietBiService.updateStatus(id, tinhTrangId);
+            return ResponseEntity.ok(ApiResponse.ok("Cập nhật trạng thái thành công", updatedTb));
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.badRequest().body(ApiResponse.error(e.getMessage()));
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body(ApiResponse.error(e.getMessage()));
+        }
+    }
 }

@@ -21,6 +21,10 @@ public class ThietBiService {
     private final KhoRepository khoRepository;
     private final HinhAnhThietBiRepository hinhAnhThietBiRepository;
     private final LoaiThietBiService loaiThietBiService;
+    private final ChiTietThueThietBiRepository chiTietThueThietBiRepository;
+    private final HopDongThueRepository hopDongThueRepository;
+    private final LichSuBaoTriRepository lichSuBaoTriRepository;
+    private final S3StorageService s3StorageService;
 
     public ThietBiService(ThietBiRepository thietBiRepository,
                           LoaiThietBiRepository loaiThietBiRepository,
@@ -29,7 +33,11 @@ public class ThietBiService {
                           TinhTrangThietBiRepository tinhTrangThietBiRepository,
                           KhoRepository khoRepository,
                           HinhAnhThietBiRepository hinhAnhThietBiRepository,
-                          LoaiThietBiService loaiThietBiService) {
+                          LoaiThietBiService loaiThietBiService,
+                          ChiTietThueThietBiRepository chiTietThueThietBiRepository,
+                          HopDongThueRepository hopDongThueRepository,
+                          LichSuBaoTriRepository lichSuBaoTriRepository,
+                          S3StorageService s3StorageService) {
         this.thietBiRepository = thietBiRepository;
         this.loaiThietBiRepository = loaiThietBiRepository;
         this.danhMucThietBiRepository = danhMucThietBiRepository;
@@ -38,6 +46,10 @@ public class ThietBiService {
         this.khoRepository = khoRepository;
         this.hinhAnhThietBiRepository = hinhAnhThietBiRepository;
         this.loaiThietBiService = loaiThietBiService;
+        this.chiTietThueThietBiRepository = chiTietThueThietBiRepository;
+        this.hopDongThueRepository = hopDongThueRepository;
+        this.lichSuBaoTriRepository = lichSuBaoTriRepository;
+        this.s3StorageService = s3StorageService;
     }
 
     // 1. Lấy tất cả thiết bị
@@ -107,12 +119,12 @@ public class ThietBiService {
         Kho kho = khoRepository.findById(tb.getKhoHienTaiId())
                 .orElse(null);
 
-        // 7. Lấy danh sách hình ảnh
+        // 7. Lấy danh sách hình ảnh (chuyển đổi relative path sang public URL)
         List<HinhAnhThietBi> hinhAnhs = hinhAnhThietBiRepository.findByThietBiId(tb.getThietBiId());
         List<ThietBiDetailResponse.HinhAnhInfo> hinhAnhInfos = hinhAnhs.stream()
                 .map(ha -> ThietBiDetailResponse.HinhAnhInfo.builder()
                         .hinhAnhId(ha.getHinhAnhId())
-                        .urlAnh(ha.getUrlAnh())
+                        .urlAnh(s3StorageService.getPublicUrl(ha.getUrlAnh())) // Convert qua public url
                         .loaiAnhId(ha.getLoaiAnhId())
                         .ngayChup(ha.getNgayChup())
                         .build())
@@ -144,6 +156,8 @@ public class ThietBiService {
                 .diaChiKho(kho != null ? kho.getDiaChi() : null)
                 // Hình ảnh
                 .hinhAnhs(hinhAnhInfos)
+                // QR code
+                .qrCodeUrl(tb.getQrCodeUrl() != null ? s3StorageService.getPublicUrl(tb.getQrCodeUrl()) : null)
                 .build();
     }
 
@@ -177,7 +191,38 @@ public class ThietBiService {
                     .khoHienTaiId(tb.getKhoHienTaiId())
                     .tenKho(tenKho)
                     .ngayBaoTriTiepTheo(tb.getNgayBaoTriTiepTheo())
+                    .qrCodeUrl(tb.getQrCodeUrl() != null ? s3StorageService.getPublicUrl(tb.getQrCodeUrl()) : null)
                     .build();
         }).collect(Collectors.toList());
+    }
+
+    /**
+     * Lấy danh sách hợp đồng mà thiết bị đã tham gia
+     */
+    public List<HopDongThue> getDeviceContracts(Integer thietBiId) {
+        List<Integer> hopDongIds = chiTietThueThietBiRepository.findHopDongIdsByThietBiId(thietBiId);
+        return hopDongThueRepository.findAllById(hopDongIds);
+    }
+
+    /**
+     * Lấy lịch sử bảo trì của thiết bị
+     */
+    public List<LichSuBaoTri> getMaintenanceHistory(Integer thietBiId) {
+        return lichSuBaoTriRepository.findByThietBiIdOrderByNgayThucHienDesc(thietBiId);
+    }
+
+    /**
+     * Cập nhật trạng thái của thiết bị (Bảo trì / Hoàn thành bảo trì)
+     */
+    public ThietBi updateStatus(Integer thietBiId, Integer tinhTrangId) {
+        if (tinhTrangId != 1 && tinhTrangId != 3) {
+            throw new IllegalArgumentException("Chỉ được chuyển sang trạng thái 1 (Sẵn sàng) hoặc 3 (Đang bảo trì)");
+        }
+        
+        ThietBi tb = thietBiRepository.findById(thietBiId)
+                .orElseThrow(() -> new ResourceNotFoundException("Không tìm thấy thiết bị: " + thietBiId));
+                
+        tb.setTinhTrangId(tinhTrangId);
+        return thietBiRepository.save(tb);
     }
 }

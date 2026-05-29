@@ -28,18 +28,20 @@ public class QrCodeService {
     private static final String QR_DIR = "uploads/qrcode";
 
     private final ThietBiRepository thietBiRepository;
+    private final S3StorageService s3StorageService;
 
-    public QrCodeService(ThietBiRepository thietBiRepository) {
+    public QrCodeService(ThietBiRepository thietBiRepository, S3StorageService s3StorageService) {
         this.thietBiRepository = thietBiRepository;
+        this.s3StorageService = s3StorageService;
     }
 
     /**
      * Lấy hoặc tạo mới QR code cho thiết bị theo ID.
-     * - Nếu thiết bị đã có qrCodeUrl → trả về URL cũ.
-     * - Nếu chưa → tạo ảnh QR, lưu file PNG, cập nhật DB, trả về URL mới.
+     * - Nếu thiết bị đã có qrCodeUrl → trả về URL public.
+     * - Nếu chưa → tạo ảnh QR, upload lên Cloudflare R2, cập nhật DB, trả về URL mới.
      *
      * @param thietBiId ID thiết bị
-     * @return đường dẫn public truy cập ảnh QR (VD: /uploads/qrcode/TB001.png)
+     * @return đường dẫn public truy cập ảnh QR
      */
     public String getOrCreateQrCode(Integer thietBiId) {
         // 1. Tìm thiết bị
@@ -47,9 +49,9 @@ public class QrCodeService {
                 .orElseThrow(() -> new ResourceNotFoundException(
                         "Khong tim thay thiet bi voi ID: " + thietBiId));
 
-        // 2. Nếu đã có QR → trả về luôn
+        // 2. Nếu đã có QR → trả về public URL luôn
         if (tb.getQrCodeUrl() != null && !tb.getQrCodeUrl().isBlank()) {
-            return tb.getQrCodeUrl();
+            return s3StorageService.getPublicUrl(tb.getQrCodeUrl());
         }
 
         // 3. Tạo QR content: DEVICE:<maTaiSan>
@@ -57,13 +59,8 @@ public class QrCodeService {
 
         // 4. Tạo file name: <maTaiSan>.png
         String fileName = tb.getMaTaiSan() + ".png";
-        Path dirPath = Paths.get(QR_DIR);
-        Path filePath = dirPath.resolve(fileName);
 
         try {
-            // Tạo thư mục nếu chưa tồn tại
-            Files.createDirectories(dirPath);
-
             // 5. Tạo QR code bằng ZXing
             QRCodeWriter qrCodeWriter = new QRCodeWriter();
             Map<EncodeHintType, Object> hints = new HashMap<>();
@@ -74,20 +71,23 @@ public class QrCodeService {
             BitMatrix bitMatrix = qrCodeWriter.encode(
                     qrContent, BarcodeFormat.QR_CODE, QR_WIDTH, QR_HEIGHT, hints);
 
-            // 6. Lưu file PNG
-            MatrixToImageWriter.writeToPath(bitMatrix, "PNG", filePath);
+            // 6. Chuyển BitMatrix thành byte[]
+            java.io.ByteArrayOutputStream baos = new java.io.ByteArrayOutputStream();
+            MatrixToImageWriter.writeToStream(bitMatrix, "PNG", baos);
+            byte[] qrBytes = baos.toByteArray();
+
+            // 7. Upload lên Cloudflare R2 thông qua S3StorageService
+            String relativePath = s3StorageService.uploadByteData("qrcode", fileName, qrBytes, "image/png");
+
+            // 8. Cập nhật DB (Lưu relative path)
+            tb.setQrCodeUrl(relativePath);
+            thietBiRepository.save(tb);
+
+            // 9. Trả về public URL
+            return s3StorageService.getPublicUrl(relativePath);
 
         } catch (WriterException | IOException e) {
             throw new BusinessException("Khong the tao QR code: " + e.getMessage());
         }
-
-        // 7. Tạo URL public (relative path phục vụ qua static resource)
-        String qrUrl = "/uploads/qrcode/" + fileName;
-
-        // 8. Cập nhật DB
-        tb.setQrCodeUrl(qrUrl);
-        thietBiRepository.save(tb);
-
-        return qrUrl;
     }
 }

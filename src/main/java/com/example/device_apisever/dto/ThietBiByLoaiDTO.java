@@ -18,4 +18,5 @@ public class ThietBiByLoaiDTO {
     private Integer khoHienTaiId;
     private String tenKho;              // "Kho A" — JOIN từ bảng Kho
     private LocalDateTime ngayBaoTriTiepTheo;
+    private String qrCodeUrl;
 }

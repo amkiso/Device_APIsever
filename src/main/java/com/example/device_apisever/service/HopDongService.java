@@ -34,7 +34,7 @@ public class HopDongService {
     private final CauHinhHopDongRepository cauHinhRepo;
     private final LoaiHopDongRepository loaiHopDongRepo;
     private final ThongBaoService thongBaoService;
-    private final AzureStorageService azureStorageService;
+    private final S3StorageService s3StorageService;
 
     public HopDongService(HopDongThueRepository hopDongRepo,
                           NguoiDungRepository nguoiDungRepo,
@@ -50,7 +50,7 @@ public class HopDongService {
                           CauHinhHopDongRepository cauHinhRepo,
                           LoaiHopDongRepository loaiHopDongRepo,
                           ThongBaoService thongBaoService,
-                          AzureStorageService azureStorageService) {
+                          S3StorageService s3StorageService) {
         this.hopDongRepo = hopDongRepo;
         this.nguoiDungRepo = nguoiDungRepo;
         this.thietBiRepo = thietBiRepo;
@@ -65,7 +65,7 @@ public class HopDongService {
         this.cauHinhRepo = cauHinhRepo;
         this.loaiHopDongRepo = loaiHopDongRepo;
         this.thongBaoService = thongBaoService;
-        this.azureStorageService = azureStorageService;
+        this.s3StorageService = s3StorageService;
     }
 
     private NguoiDung resolveNguoiDung(String taiKhoan) {
@@ -279,15 +279,15 @@ public class HopDongService {
             throw new BusinessException("Hợp đồng không ở trạng thái chờ ký kết");
         }
 
-        // Sinh tên file duy nhất và upload lên Azure container "sign"
-        String fileName = azureStorageService.generateFileName("png");
-        azureStorageService.uploadByteData("sign", fileName, chuKyData, "image/png");
+        // Sinh tên file duy nhất và upload lên container "sign"
+        String fileName = s3StorageService.generateFileName("png");
+        String relativePath = s3StorageService.uploadByteData("sign", fileName, chuKyData, "image/png");
 
-        // Lưu tên file vào DB (thay vì byte[])
+        // Lưu tên file vào DB (Relative path)
         ChuKyDienTu ck = ChuKyDienTu.builder()
                 .hopDongId(hopDongId)
                 .nguoiDungId(khach.getNguoiDungId())
-                .tenFileChuKy(fileName)
+                .tenFileChuKy(relativePath) // LƯU RELATIVE PATH
                 .maPinHash(passwordEncoder.encode(maPin))
                 .ipAddress(ipAddress)
                 .thietBiKy(thietBiKy)

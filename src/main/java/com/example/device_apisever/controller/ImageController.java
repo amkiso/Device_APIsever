@@ -11,7 +11,7 @@ import com.example.device_apisever.exception.ResourceNotFoundException;
 import com.example.device_apisever.repository.HinhAnhThietBiRepository;
 import com.example.device_apisever.repository.NguoiDungRepository;
 import com.example.device_apisever.repository.ThietBiRepository;
-import com.example.device_apisever.service.AzureStorageService;
+import com.example.device_apisever.service.S3StorageService;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
 import org.springframework.http.ResponseEntity;
@@ -40,18 +40,18 @@ import java.util.Map;
 @RequestMapping("/api/images")
 public class ImageController {
 
-    private final AzureStorageService azureStorageService;
+    private final S3StorageService s3StorageService;
     private final HinhAnhThietBiRepository hinhAnhThietBiRepository;
     private final ThietBiRepository thietBiRepository;
     private final NguoiDungRepository nguoiDungRepository;
     private final JwtService jwtService;
 
-    public ImageController(AzureStorageService azureStorageService,
+    public ImageController(S3StorageService s3StorageService,
                            HinhAnhThietBiRepository hinhAnhThietBiRepository,
                            ThietBiRepository thietBiRepository,
                            NguoiDungRepository nguoiDungRepository,
                            JwtService jwtService) {
-        this.azureStorageService = azureStorageService;
+        this.s3StorageService = s3StorageService;
         this.hinhAnhThietBiRepository = hinhAnhThietBiRepository;
         this.thietBiRepository = thietBiRepository;
         this.nguoiDungRepository = nguoiDungRepository;
@@ -79,16 +79,17 @@ public class ImageController {
     @GetMapping("/{category}/get-upload-url")
     public ResponseEntity<ApiResponse<SasUploadResponse>> getUploadUrl(
             @PathVariable String category,
-            @RequestParam(defaultValue = "jpg") String extension) {
+            @RequestParam(defaultValue = "jpg") String extension,
+            @RequestParam(defaultValue = "image/jpeg") String contentType) {
 
         // 1. Sinh tên file duy nhất bằng UUID
-        String fileName = azureStorageService.generateFileName(extension);
+        String fileName = s3StorageService.generateFileName(extension);
 
         // 2. Tạo SAS URL (Write-only, 5 phút) cho container tương ứng
-        String sasUrl = azureStorageService.generateSasUploadUrl(category, fileName);
+        String sasUrl = s3StorageService.generateSasUploadUrl(category, fileName, contentType);
 
         // 3. Tạo public URL (để client lưu/hiển thị sau khi upload xong)
-        String publicUrl = azureStorageService.getPublicUrl(category, fileName);
+        String publicUrl = s3StorageService.getPublicUrlByCategory(category, fileName);
 
         // 4. Trả về response kèm thông tin category
         SasUploadResponse response = SasUploadResponse.builder()
@@ -133,12 +134,12 @@ public class ImageController {
                 .orElseThrow(() -> new ResourceNotFoundException(
                         "Khong tim thay nguoi dung voi ID: " + nguoiDungId));
 
-        // 3. Tạo public URL từ fileName trong container "user"
-        String avatarUrl = azureStorageService.getPublicUrl("user", request.getFileName());
+        // 3. Lấy public URL từ fileName (dùng để trả về)
+        String avatarUrl = s3StorageService.getPublicUrlByCategory("user", request.getFileName());
 
-        // 4. Trả về URL avatar mới (client tự lưu cục bộ hoặc dùng hiển thị)
-        // TODO: Nếu bảng NguoiDung có cột "AnhDaiDien", uncomment dòng dưới:
-        // nguoiDung.setAnhDaiDien(avatarUrl);
+        // Nếu bảng NguoiDung có lưu ảnh thì lưu Dạng Relative Path thay vì Full URL
+        // String relativePath = s3StorageService.getRelativePath("user", request.getFileName());
+        // nguoiDung.setAnhDaiDien(relativePath);
         // nguoiDungRepository.save(nguoiDung);
 
         Map<String, String> result = Map.of(
@@ -178,14 +179,14 @@ public class ImageController {
         // 2. Trích xuất NguoiDungID từ JWT token (người chụp ảnh)
         Integer nguoiDungId = extractNguoiDungIdFromToken(httpRequest);
 
-        // 3. Tạo URL đầy đủ từ fileName trong container "products"
-        String publicUrl = azureStorageService.getPublicUrl("products", request.getFileName());
+        // 3. Tạo đường dẫn tương đối (Relative Path) để lưu database
+        String relativePath = s3StorageService.getRelativePath("products", request.getFileName());
 
         // 4. Tạo bản ghi HinhAnhThietBi
         HinhAnhThietBi hinhAnh = HinhAnhThietBi.builder()
                 .thietBiId(thietBi.getThietBiId())
                 .nguoiDungChupId(nguoiDungId)
-                .urlAnh(publicUrl)
+                .urlAnh(relativePath) // CHỈ LƯU RELATIVE PATH
                 .loaiAnhId(request.getLoaiAnhId() != null ? request.getLoaiAnhId() : 1)
                 .banGiaoId(request.getBanGiaoId())
                 .baoTriId(request.getBaoTriId())
@@ -235,14 +236,14 @@ public class ImageController {
         // 3. Trích xuất NguoiDungID từ JWT token
         Integer nguoiDungId = extractNguoiDungIdFromToken(httpRequest);
 
-        // 4. Tạo URL đầy đủ từ fileName trong container "work"
-        String publicUrl = azureStorageService.getPublicUrl("work", request.getFileName());
+        // 4. Tạo đường dẫn tương đối để lưu database
+        String relativePath = s3StorageService.getRelativePath("work", request.getFileName());
 
         // 5. Tạo bản ghi HinhAnhThietBi
         HinhAnhThietBi hinhAnh = HinhAnhThietBi.builder()
                 .thietBiId(thietBi.getThietBiId())
                 .nguoiDungChupId(nguoiDungId)
-                .urlAnh(publicUrl)
+                .urlAnh(relativePath) // CHỈ LƯU RELATIVE PATH
                 .loaiAnhId(request.getLoaiAnhId() != null ? request.getLoaiAnhId() : 2)  // Mặc định loại 2 (biên bản)
                 .banGiaoId(request.getBanGiaoId())
                 .baoTriId(request.getBaoTriId())
@@ -275,15 +276,11 @@ public class ImageController {
                 .orElseThrow(() -> new ResourceNotFoundException(
                         "Khong tim thay hinh anh voi ID: " + hinhAnhId));
 
-        // 2. Trích xuất tên file và phát hiện category từ URL
-        String urlAnh = hinhAnh.getUrlAnh();
-        String fileName = urlAnh.substring(urlAnh.lastIndexOf("/") + 1);
-        String category = azureStorageService.detectCategoryFromUrl(urlAnh);
+        // 2. Trích xuất relative path từ URL lưu trong DB (đã là relative path rồi)
+        String relativePath = hinhAnh.getUrlAnh();
 
-        // 3. Xóa blob trên Azure (nếu phát hiện được category)
-        if (category != null) {
-            azureStorageService.deleteBlob(category, fileName);
-        }
+        // 3. Xóa file trên R2
+        s3StorageService.deleteFileByRelativePath(relativePath);
 
         // 4. Xóa bản ghi trong Database
         hinhAnhThietBiRepository.delete(hinhAnh);

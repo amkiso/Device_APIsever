@@ -233,7 +233,7 @@ Hệ thống upload ảnh sử dụng kiến trúc **cấp phát SAS Token** (Sh
 | `products` | Ảnh sản phẩm/thiết bị | Ảnh thiết bị cho cataloge |
 | `work` | Ảnh nghiệp vụ | Giao nhận, bàn giao, hiện trường, bảo trì |
 
-**Luồng hoạt động:**
+**Luồng hoạt động cũ:**
 ```
 ┌──────────┐  1. GET /{category}/get-upload-url  ┌──────────┐
 │  Mobile  │ ───────────────────────────────────► │  Server  │
@@ -250,7 +250,26 @@ Hệ thống upload ảnh sử dụng kiến trúc **cấp phát SAS Token** (Sh
 │          │ ◄─────────────────────────────────── │  (lưu DB)│
 └──────────┘  6. Xác nhận lưu thành công           └──────────┘
 ```
-
+**Luồng hoạt động mới:**
+```
+┌──────────┐  1. GET /{category}/get-upload-url?contentType=image/jpeg
+│  Mobile  │ ──────────────────────────────────────────────────────────► ┌──────────┐
+│   App    │ ◄────────────────────────────────────────────────────────── │  Server  │
+│          │  2. Trả về presignedUrl + fileName + category               │ (Spring) │
+│          │     (URL này đã được ký nhúng kèm contentType)              └──────────┘
+│          │                                      
+│          │  3. HTTP PUT presignedUrl             ┌──────────┐
+│          │     Header: Content-Type: image/jpeg  │Cloudflare│
+│          │     Body: <file_binary>               │    R2    │
+│          │ ───────────────────────────────────►  │ (S3 API) │
+│          │ ◄───────────────────────────────────  │          │
+│          │  4. Upload thành công (HTTP 200 OK)   └──────────┘
+│          │                                      
+│          │  5. POST /{category}/confirm-upload   ┌──────────┐
+│          │ ───────────────────────────────────►  │  Server  │
+│          │ ◄───────────────────────────────────  │  (lưu DB)│
+└──────────┘  6. Xác nhận lưu DB thành công        └──────────┘
+```
 ---
 
 ### 8.1. Lấy SAS URL để upload ảnh (chung cho cả 3 container)
@@ -269,9 +288,9 @@ Gọi trước khi upload để lấy link upload có thời hạn. Thay `{categ
       "success": true,
       "message": "Tao SAS URL thanh cong cho container 'products'. URL co hieu luc trong 5 phut.",
       "data": {
-          "sasUrl": "https://mediaserverproject.blob.core.windows.net/products/uuid-file.jpg?sv=...&se=...&sp=w&sig=...",
+          "sasUrl": "https://3364bc231c1ccf64c16448564d47c9ee.r2.cloudflarestorage.com/quanlythietbi/products/uuid-file.jpg?sv=...&se=...&sp=w&sig=...",
           "fileName": "a1b2c3d4-e5f6-7890-abcd-ef1234567890.jpg",
-          "publicUrl": "https://mediaserverproject.blob.core.windows.net/products/a1b2c3d4-e5f6-7890-abcd-ef1234567890.jpg",
+          "publicUrl": "https://3364bc231c1ccf64c16448564d47c9ee.r2.cloudflarestorage.com/quanlythietbi/products/a1b2c3d4-e5f6-7890-abcd-ef1234567890.jpg",
           "category": "products"
       }
   }
@@ -311,7 +330,7 @@ Sau khi nhận `sasUrl`, client gọi trực tiếp lên Azure:
       "message": "Cap nhat anh dai dien thanh cong!",
       "data": {
           "nguoiDungId": "1",
-          "avatarUrl": "https://mediaserverproject.blob.core.windows.net/user/a1b2c3d4-...jpg"
+          "avatarUrl": "https://3364bc231c1ccf64c16448564d47c9ee.r2.cloudflarestorage.com/quanlythietbi/user/a1b2c3d4-...jpg"
       }
   }
   ```
@@ -341,7 +360,7 @@ Sau khi nhận `sasUrl`, client gọi trực tiếp lên Azure:
           "hinhAnhId": 10,
           "thietBiId": 5,
           "nguoiDungChupId": 1,
-          "urlAnh": "https://mediaserverproject.blob.core.windows.net/products/a1b2c3d4-...jpg",
+          "urlAnh": "https://3364bc231c1ccf64c16448564d47c9ee.r2.cloudflarestorage.com/quanlythietbi/products/a1b2c3d4-...jpg",
           "loaiAnhId": 1,
           "ngayChup": "2026-05-02T23:00:00"
       }
@@ -377,7 +396,7 @@ Sau khi nhận `sasUrl`, client gọi trực tiếp lên Azure:
           "hinhAnhId": 11,
           "thietBiId": 5,
           "nguoiDungChupId": 1,
-          "urlAnh": "https://mediaserverproject.blob.core.windows.net/work/a1b2c3d4-...jpg",
+          "urlAnh": "https://3364bc231c1ccf64c16448564d47c9ee.r2.cloudflarestorage.com/quanlythietbi/work/a1b2c3d4-...jpg",
           "loaiAnhId": 2,
           "ngayChup": "2026-05-02T23:00:00",
           "banGiaoId": 5,
@@ -533,7 +552,7 @@ Quản lý loại thiết bị cụ thể trong mỗi danh mục (ví dụ: "Má
               "tenLoaiThietBi": "Máy phát điện 50KVA",
               "thongSoKyThuat": "Công suất: 50KVA, Nhiên liệu: Diesel",
               "giaThueThamKhao": 5000000.00,
-              "anhDaiDien": "https://mediaserverproject.blob.core.windows.net/products/abc.jpg"
+              "anhDaiDien": "https://3364bc231c1ccf64c16448564d47c9ee.r2.cloudflarestorage.com/quanlythietbi/products/abc.jpg"
           }
       ]
   }
@@ -561,7 +580,7 @@ Quản lý loại thiết bị cụ thể trong mỗi danh mục (ví dụ: "Má
       "tenLoaiThietBi": "Máy phát điện 100KVA",
       "thongSoKyThuat": "Công suất: 100KVA, Nhiên liệu: Diesel",
       "giaThueThamKhao": 8000000.00,
-      "anhDaiDien": "https://mediaserverproject.blob.core.windows.net/products/xyz.jpg"
+      "anhDaiDien": "https://3364bc231c1ccf64c16448564d47c9ee.r2.cloudflarestorage.com/quanlythietbi/products/xyz.jpg"
   }
   ```
 - **Response (200 OK):**
@@ -576,7 +595,7 @@ Quản lý loại thiết bị cụ thể trong mỗi danh mục (ví dụ: "Má
           "tenLoaiThietBi": "Máy phát điện 100KVA",
           "thongSoKyThuat": "Công suất: 100KVA, Nhiên liệu: Diesel",
           "giaThueThamKhao": 8000000.00,
-          "anhDaiDien": "https://mediaserverproject.blob.core.windows.net/products/xyz.jpg"
+          "anhDaiDien": "https://3364bc231c1ccf64c16448564d47c9ee.r2.cloudflarestorage.com/quanlythietbi/products/xyz.jpg"
       }
   }
   ```
@@ -746,6 +765,47 @@ Ngoài API tra cứu (mục 6), hệ thống còn có các endpoint quản lý t
   }
   ```
 
+### 12.4. Lấy danh sách hợp đồng của thiết bị (Phục vụ QR Scan)
+- **URL:** `GET /api/thiet-bi/{id}/hop-dong`
+- **Headers:** `Authorization: Bearer <token>`
+- **Response (200 OK):** Trả về danh sách hợp đồng mà thiết bị đã từng hoặc đang tham gia.
+
+### 12.5. Lấy lịch sử bảo trì của thiết bị (Phục vụ QR Scan)
+- **URL:** `GET /api/thiet-bi/{id}/lich-su-bao-tri`
+- **Headers:** `Authorization: Bearer <token>`
+- **Response (200 OK):** Trả về danh sách lịch sử bảo trì của thiết bị.
+
+### 12.6. Lấy hoặc Tạo Mã QR cho Thiết Bị (Phục vụ In ấn / Kiểm kê)
+- **URL:** `GET /api/thiet-bi/{id}/qr-code`
+- **Headers:** `Authorization: Bearer <token>`
+- **Mô tả:** Nếu thiết bị đã có mã QR, hệ thống trả về URL ảnh QR. Nếu chưa có, hệ thống tự động sinh mã QR với nội dung `DEVICE:<maTaiSan>`, lưu ảnh lên Cloudflare R2, cập nhật CSDL và trả về URL.
+- **Định dạng nội dung QR khi quét:** `DEVICE:<maTaiSan>`
+- **Response (200 OK):**
+  ```json
+  {
+      "success": true,
+      "message": "Lay QR code thanh cong",
+      "data": {
+          "thietBiId": 5,
+          "maTaiSan": "MK-005",
+          "qrContent": "DEVICE:MK-005",
+          "qrCodeUrl": "https://3364bc231c1ccf64c16448564d47c9ee.r2.cloudflarestorage.com/quanlythietbi/qrcode/MK-005.png"
+      }
+  }
+  ```
+
+### 12.7. Cập nhật trạng thái của thiết bị (Phục vụ QR Scan - Bảo trì)
+- **URL:** `PUT /api/thiet-bi/{id}/cap-nhat-tinh-trang`
+- **Headers:** `Authorization: Bearer <token>`
+- **Body (JSON):**
+  ```json
+  {
+      "tinhTrangId": 3
+  }
+  ```
+  *(Truyền 3 để chuyển sang Đang bảo trì, hoặc 1 để chuyển về Sẵn sàng)*
+- **Response (200 OK):** Trả về entity thiết bị đã được cập nhật.
+
 ---
 
 ## 🛒 13. Giỏ hàng (Cart API)
@@ -771,7 +831,7 @@ Lấy tất cả items trong giỏ hàng của user đang đăng nhập (xác đ
               "gioHangId": 1,
               "loaiThietBiId": 3,
               "tenLoaiThietBi": "Máy phát điện 50KVA",
-              "anhDaiDien": "https://mediaserverproject.blob.core.windows.net/products/abc.jpg",
+              "anhDaiDien": "https://3364bc231c1ccf64c16448564d47c9ee.r2.cloudflarestorage.com/quanlythietbi/products/abc.jpg",
               "giaThueThamKhao": 5000000.00,
               "soLuong": 2,
               "thanhTien": 10000000.00,
@@ -781,7 +841,7 @@ Lấy tất cả items trong giỏ hàng của user đang đăng nhập (xác đ
               "gioHangId": 2,
               "loaiThietBiId": 7,
               "tenLoaiThietBi": "Máy khoan bê tông",
-              "anhDaiDien": "https://mediaserverproject.blob.core.windows.net/products/xyz.jpg",
+              "anhDaiDien": "https://3364bc231c1ccf64c16448564d47c9ee.r2.cloudflarestorage.com/quanlythietbi/products/xyz.jpg",
               "giaThueThamKhao": 3000000.00,
               "soLuong": 1,
               "thanhTien": 3000000.00,
@@ -816,7 +876,7 @@ Thêm loại thiết bị vào giỏ. Nếu loại thiết bị đã tồn tại
           "gioHangId": 1,
           "loaiThietBiId": 3,
           "tenLoaiThietBi": "Máy phát điện 50KVA",
-          "anhDaiDien": "https://mediaserverproject.blob.core.windows.net/products/abc.jpg",
+          "anhDaiDien": "https://3364bc231c1ccf64c16448564d47c9ee.r2.cloudflarestorage.com/quanlythietbi/products/abc.jpg",
           "giaThueThamKhao": 5000000.00,
           "soLuong": 1,
           "thanhTien": 5000000.00,
@@ -846,7 +906,7 @@ Thay đổi số lượng của 1 item trong giỏ hàng.
           "gioHangId": 1,
           "loaiThietBiId": 3,
           "tenLoaiThietBi": "Máy phát điện 50KVA",
-          "anhDaiDien": "https://mediaserverproject.blob.core.windows.net/products/abc.jpg",
+          "anhDaiDien": "https://3364bc231c1ccf64c16448564d47c9ee.r2.cloudflarestorage.com/quanlythietbi/products/abc.jpg",
           "giaThueThamKhao": 5000000.00,
           "soLuong": 3,
           "thanhTien": 15000000.00,

@@ -28,8 +28,9 @@ dependencies {
     // Firebase Admin SDK
     implementation 'com.google.firebase:firebase-admin:9.2.0'
 
-    // Azure Blob Storage SDK — dùng cho upload ảnh qua SAS Token
-    implementation 'com.azure:azure-storage-blob:12.24.0'
+    // AWS S3 SDK — dùng cho Cloudflare R2
+    implementation platform('software.amazon.awssdk:bom:2.25.10')
+    implementation 'software.amazon.awssdk:s3'
 
 
     // Spring Boot Starters

@@ -11,12 +11,12 @@ import java.util.List;
 public class LoaiThietBiService {
 
     private final LoaiThietBiRepository loaiThietBiRepository;
-    private final AzureStorageService azureStorageService;
+    private final S3StorageService s3StorageService;
 
     public LoaiThietBiService(LoaiThietBiRepository loaiThietBiRepository,
-                              AzureStorageService azureStorageService) {
+                              S3StorageService s3StorageService) {
         this.loaiThietBiRepository = loaiThietBiRepository;
-        this.azureStorageService = azureStorageService;
+        this.s3StorageService = s3StorageService;
     }
 
     // ========================================================================================
@@ -24,10 +24,10 @@ public class LoaiThietBiService {
     // ========================================================================================
 
     /**
-     * Chuyển đổi tên file ảnh đại diện thành full Azure Blob URL.
-     * Ảnh LoaiThietBi nằm trong container "products".
-     * Ví dụ: "Screenshot 2026-05-04 085122.png"
-     *     → "https://mediaserverproject.blob.core.windows.net/products/Screenshot%202026-05-04%20085122.png"
+     * Chuyển đổi tên file ảnh đại diện thành full R2 S3 URL.
+     * Ảnh LoaiThietBi nằm trong thư mục "products".
+     * Ví dụ: "product/uuid.png"
+     *     → "https://endpoint.../quanlythietbi/product/uuid.png"
      *
      * @param loaiThietBi entity cần chuyển đổi (sẽ bị mutate trực tiếp)
      * @return entity đã được gắn full URL vào anhDaiDien
@@ -36,7 +36,16 @@ public class LoaiThietBiService {
         if (loaiThietBi != null && loaiThietBi.getAnhDaiDien() != null
                 && !loaiThietBi.getAnhDaiDien().isBlank()
                 && !loaiThietBi.getAnhDaiDien().startsWith("http")) {
-            String fullUrl = azureStorageService.getPublicUrl("products", loaiThietBi.getAnhDaiDien());
+            
+            // Nếu trong DB lưu tên file (chưa có thư mục), ta dùng getPublicUrlByCategory
+            // Nếu trong DB lưu relative path (đã có thư mục), ta dùng getPublicUrl
+            String path = loaiThietBi.getAnhDaiDien();
+            String fullUrl;
+            if (path.contains("/")) {
+                fullUrl = s3StorageService.getPublicUrl(path);
+            } else {
+                fullUrl = s3StorageService.getPublicUrlByCategory("products", path);
+            }
             loaiThietBi.setAnhDaiDien(fullUrl);
         }
         return loaiThietBi;
@@ -54,14 +63,13 @@ public class LoaiThietBiService {
     //  PUBLIC METHODS — Trả về full URL cho anhDaiDien
     // ========================================================================================
 
-    /**
-     * Trả về full Azure URL cho field anhDaiDien.
-     * Dùng bởi ThietBiService khi build ThietBiDetailResponse.
-     */
     public String getFullImageUrl(String fileName) {
         if (fileName == null || fileName.isBlank()) return null;
         if (fileName.startsWith("http")) return fileName;
-        return azureStorageService.getPublicUrl("products", fileName);
+        if (fileName.contains("/")) {
+            return s3StorageService.getPublicUrl(fileName);
+        }
+        return s3StorageService.getPublicUrlByCategory("products", fileName);
     }
 
     /**

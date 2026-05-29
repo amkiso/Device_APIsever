@@ -17,6 +17,7 @@ public class ThietBiDetailResponse {
     private Integer thietBiId;
     private String maTaiSan;
     private LocalDateTime ngayBaoTriTiepTheo;
+    private String qrCodeUrl;
 
     // ---- Loại thiết bị (bảng LoaiThietBi) ----
     private Integer loaiThietBiId;
