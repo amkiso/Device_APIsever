@@ -74,13 +74,35 @@ public class ThietBiController {
 
     @PostMapping
     public ResponseEntity<ApiResponse<ThietBi>> create(@RequestBody ThietBi thietBi) {
-        return ResponseEntity.ok(ApiResponse.ok("Tao thiet bi thanh cong", thietBiService.save(thietBi)));
+        ThietBi saved = thietBiService.createWithAutoQr(thietBi);
+        // Auto tạo QR code
+        try {
+            qrCodeService.getOrCreateQrCode(saved.getThietBiId());
+        } catch (Exception e) {
+            // Lỗi tạo QR không ngăn cản việc tạo thiết bị
+        }
+        return ResponseEntity.ok(ApiResponse.ok("Tao thiet bi thanh cong", saved));
+    }
+
+    @PutMapping("/{id}")
+    public ResponseEntity<ApiResponse<ThietBi>> update(@PathVariable Integer id, @RequestBody ThietBi thietBi) {
+        ThietBi updated = thietBiService.updateThietBi(id, thietBi);
+        return ResponseEntity.ok(ApiResponse.ok("Cap nhat thiet bi thanh cong", updated));
     }
 
     @DeleteMapping("/{id}")
     public ResponseEntity<ApiResponse<Void>> delete(@PathVariable Integer id) {
+        if (!thietBiService.canDelete(id)) {
+            return ResponseEntity.status(409).body(ApiResponse.error("Thiet bi da phat sinh, chi co the vo hieu hoa"));
+        }
         thietBiService.deleteById(id);
         return ResponseEntity.ok(ApiResponse.ok("Da xoa thiet bi ID: " + id, null));
+    }
+
+    @PutMapping("/{id}/vo-hieu-hoa")
+    public ResponseEntity<ApiResponse<ThietBi>> disableDevice(@PathVariable Integer id) {
+        ThietBi disabled = thietBiService.disableDevice(id);
+        return ResponseEntity.ok(ApiResponse.ok("Da vo hieu hoa thiet bi", disabled));
     }
 
     /**

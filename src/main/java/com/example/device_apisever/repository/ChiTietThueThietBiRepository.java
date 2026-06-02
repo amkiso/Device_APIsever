@@ -26,4 +26,9 @@ public interface ChiTietThueThietBiRepository extends JpaRepository<ChiTietThueT
      */
     @Query("SELECT DISTINCT c.hopDongId FROM ChiTietThueThietBi c WHERE c.thietBiId = :thietBiId")
     List<Integer> findHopDongIdsByThietBiId(@Param("thietBiId") Integer thietBiId);
+
+    /**
+     * Kiểm tra xem thiết bị có nằm trong hợp đồng nào không
+     */
+    boolean existsByThietBiId(Integer thietBiId);
 }

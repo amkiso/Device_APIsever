@@ -3,6 +3,7 @@ package com.example.device_apisever.service;
 import com.example.device_apisever.entity.LoaiThietBi;
 import com.example.device_apisever.exception.ResourceNotFoundException;
 import com.example.device_apisever.repository.LoaiThietBiRepository;
+import com.example.device_apisever.repository.ThietBiRepository;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -11,11 +12,14 @@ import java.util.List;
 public class LoaiThietBiService {
 
     private final LoaiThietBiRepository loaiThietBiRepository;
+    private final ThietBiRepository thietBiRepository;
     private final S3StorageService s3StorageService;
 
     public LoaiThietBiService(LoaiThietBiRepository loaiThietBiRepository,
+                              ThietBiRepository thietBiRepository,
                               S3StorageService s3StorageService) {
         this.loaiThietBiRepository = loaiThietBiRepository;
+        this.thietBiRepository = thietBiRepository;
         this.s3StorageService = s3StorageService;
     }
 
@@ -59,6 +63,32 @@ public class LoaiThietBiService {
         return list;
     }
 
+    /**
+     * Đếm số lượng thiết bị theo loại và gán vào entity.
+     */
+    private LoaiThietBi enrichWithCounts(LoaiThietBi loaiThietBi) {
+        if (loaiThietBi == null || loaiThietBi.getLoaiThietBiId() == null) return loaiThietBi;
+        int id = loaiThietBi.getLoaiThietBiId();
+        long total = thietBiRepository.countByLoaiThietBiId(id);
+        long available = thietBiRepository.countByLoaiThietBiIdAndTinhTrangId(id, 1);
+        long rented = thietBiRepository.countByLoaiThietBiIdAndTinhTrangId(id, 2);
+        loaiThietBi.setTongSoLuong((int) total);
+        loaiThietBi.setSoConLai((int) available);
+        loaiThietBi.setSoDangThue((int) rented);
+        return loaiThietBi;
+    }
+
+    /**
+     * Chuyển đổi danh sách LoaiThietBi → gắn full URL và count cho tất cả.
+     */
+    private List<LoaiThietBi> enrichListWithImageUrlAndCounts(List<LoaiThietBi> list) {
+        list.forEach(tb -> {
+            enrichWithImageUrl(tb);
+            enrichWithCounts(tb);
+        });
+        return list;
+    }
+
     // ========================================================================================
     //  PUBLIC METHODS — Trả về full URL cho anhDaiDien
     // ========================================================================================
@@ -76,14 +106,14 @@ public class LoaiThietBiService {
      * Lấy tất cả loại thiết bị
      */
     public List<LoaiThietBi> findAll() {
-        return enrichListWithImageUrl(loaiThietBiRepository.findAll());
+        return enrichListWithImageUrlAndCounts(loaiThietBiRepository.findAll());
     }
 
     /**
      * Lọc loại thiết bị theo danh mục
      */
     public List<LoaiThietBi> findByDanhMucId(Integer danhMucId) {
-        return enrichListWithImageUrl(loaiThietBiRepository.findByDanhMucId(danhMucId));
+        return enrichListWithImageUrlAndCounts(loaiThietBiRepository.findByDanhMucId(danhMucId));
     }
 
     /**
@@ -93,14 +123,14 @@ public class LoaiThietBiService {
         LoaiThietBi entity = loaiThietBiRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException(
                         "Không tìm thấy loại thiết bị với ID: " + id));
-        return enrichWithImageUrl(entity);
+        return enrichWithCounts(enrichWithImageUrl(entity));
     }
 
     /**
      * Tìm kiếm loại thiết bị theo tên (LIKE %keyword%)
      */
     public List<LoaiThietBi> search(String keyword) {
-        return enrichListWithImageUrl(
+        return enrichListWithImageUrlAndCounts(
                 loaiThietBiRepository.findByTenLoaiThietBiContainingIgnoreCase(keyword));
     }
 
@@ -108,7 +138,7 @@ public class LoaiThietBiService {
      * Tạo loại thiết bị mới
      */
     public LoaiThietBi create(LoaiThietBi loaiThietBi) {
-        return enrichWithImageUrl(loaiThietBiRepository.save(loaiThietBi));
+        return enrichWithCounts(enrichWithImageUrl(loaiThietBiRepository.save(loaiThietBi)));
     }
 
     /**
@@ -124,7 +154,7 @@ public class LoaiThietBiService {
         existing.setThongSoKyThuat(request.getThongSoKyThuat());
         existing.setGiaThueThamKhao(request.getGiaThueThamKhao());
         existing.setAnhDaiDien(request.getAnhDaiDien());
-        return enrichWithImageUrl(loaiThietBiRepository.save(existing));
+        return enrichWithCounts(enrichWithImageUrl(loaiThietBiRepository.save(existing)));
     }
 
     /**

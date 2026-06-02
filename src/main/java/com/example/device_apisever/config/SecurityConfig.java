@@ -54,7 +54,11 @@ public class SecurityConfig {
                 .requestMatchers(org.springframework.http.HttpMethod.POST, "/api/thiet-bi/**").hasAnyRole("ADMIN", "THU_KHO")
                 .requestMatchers(org.springframework.http.HttpMethod.PUT, "/api/thiet-bi/**").hasAnyRole("ADMIN", "THU_KHO")
                 .requestMatchers(org.springframework.http.HttpMethod.DELETE, "/api/thiet-bi/**").hasAnyRole("ADMIN", "THU_KHO")
-                // Ảnh: chỉ ADMIN, THU_KHO mới có quyền upload/xóa
+                // Ảnh User: Mọi user đăng nhập đều có thể cập nhật avatar
+                .requestMatchers("/api/images/user/**").authenticated()
+                // Ảnh Work: KTV có thể cập nhật ảnh bảo trì
+                .requestMatchers("/api/images/work/**").hasAnyRole("ADMIN", "THU_KHO", "KTV")
+                // Ảnh Products và các phần khác: ADMIN, THU_KHO
                 .requestMatchers("/api/images/**").hasAnyRole("ADMIN", "THU_KHO")
                 // Nhà cung cấp: chỉ GET
                 .requestMatchers(org.springframework.http.HttpMethod.GET, "/api/nha-cung-cap/**").authenticated()

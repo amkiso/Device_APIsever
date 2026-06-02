@@ -67,9 +67,67 @@ public class ThietBiService {
         return thietBiRepository.save(thietBi);
     }
 
+    /**
+     * Sinh mã tài sản tự động: MTS-L{loaiThietBiId}-{index}
+     * VD: MTS-L01-02
+     */
+    public String generateMaTaiSan(Integer loaiThietBiId) {
+        long count = thietBiRepository.countByLoaiThietBiId(loaiThietBiId);
+        return String.format("MTS-L%02d-%02d", loaiThietBiId, count + 1);
+    }
+
+    /**
+     * Tạo thiết bị mới + tự sinh mã tài sản + tự tạo QR code
+     */
+    public ThietBi createWithAutoQr(ThietBi thietBi) {
+        // Auto sinh mã tài sản
+        if (thietBi.getMaTaiSan() == null || thietBi.getMaTaiSan().isBlank()) {
+            thietBi.setMaTaiSan(generateMaTaiSan(thietBi.getLoaiThietBiId()));
+        }
+        // Mặc định tình trạng sẵn sàng
+        if (thietBi.getTinhTrangId() == null) {
+            thietBi.setTinhTrangId(1);
+        }
+        ThietBi saved = thietBiRepository.save(thietBi);
+        return saved;
+    }
+
+    /**
+     * Cập nhật thông tin thiết bị
+     */
+    public ThietBi updateThietBi(Integer id, ThietBi updated) {
+        ThietBi existing = thietBiRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Không tìm thấy thiết bị: " + id));
+        if (updated.getSoSerial() != null) existing.setSoSerial(updated.getSoSerial());
+        if (updated.getKhoHienTaiId() != null) existing.setKhoHienTaiId(updated.getKhoHienTaiId());
+        if (updated.getMucDichSuDung() != null) existing.setMucDichSuDung(updated.getMucDichSuDung());
+        if (updated.getGiaTriMay() != null) existing.setGiaTriMay(updated.getGiaTriMay());
+        if (updated.getNgayKiemDinh() != null) existing.setNgayKiemDinh(updated.getNgayKiemDinh());
+        if (updated.getTinhTrangBanGiao() != null) existing.setTinhTrangBanGiao(updated.getTinhTrangBanGiao());
+        return thietBiRepository.save(existing);
+    }
+
     // 4. Xóa thiết bị
     public void deleteById(Integer id) {
         thietBiRepository.deleteById(id);
+    }
+
+    /**
+     * Kiểm tra thiết bị có thể xóa (không có FK references)
+     */
+    public boolean canDelete(Integer thietBiId) {
+        return !chiTietThueThietBiRepository.existsByThietBiId(thietBiId)
+                && !lichSuBaoTriRepository.existsByThietBiId(thietBiId);
+    }
+
+    /**
+     * Vô hiệu hóa thiết bị (tinhTrangId=5)
+     */
+    public ThietBi disableDevice(Integer id) {
+        ThietBi tb = thietBiRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Không tìm thấy thiết bị: " + id));
+        tb.setTinhTrangId(5);
+        return thietBiRepository.save(tb);
     }
 
     /**
@@ -192,6 +250,8 @@ public class ThietBiService {
                     .tenKho(tenKho)
                     .ngayBaoTriTiepTheo(tb.getNgayBaoTriTiepTheo())
                     .qrCodeUrl(tb.getQrCodeUrl() != null ? s3StorageService.getPublicUrl(tb.getQrCodeUrl()) : null)
+                    .soSerial(tb.getSoSerial())
+                    .giaTriMay(tb.getGiaTriMay())
                     .build();
         }).collect(Collectors.toList());
     }

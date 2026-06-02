@@ -149,4 +149,22 @@ public class ThongBaoService {
         tbnd.setNgayDoc(LocalDateTime.now());
         thongBaoNguoiDungRepository.save(tbnd);
     }
+
+    /**
+     * Đánh dấu tất cả thông báo của 1 user là đã đọc.
+     */
+    @Transactional
+    public void danhDaDocTatCa(Integer nguoiDungId) {
+        List<ThongBaoNguoiDung> danhSachChuaDoc = thongBaoNguoiDungRepository
+                .findByNguoiDungIdOrderByThongBaoIdDesc(nguoiDungId).stream()
+                .filter(tb -> !tb.getDaDoc())
+                .collect(Collectors.toList());
+
+        for (ThongBaoNguoiDung tbnd : danhSachChuaDoc) {
+            tbnd.setDaDoc(true);
+            tbnd.setNgayDoc(LocalDateTime.now());
+        }
+        
+        thongBaoNguoiDungRepository.saveAll(danhSachChuaDoc);
+    }
 }

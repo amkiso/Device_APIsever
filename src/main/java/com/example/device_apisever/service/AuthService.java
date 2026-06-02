@@ -28,19 +28,22 @@ public class AuthService {
     private final JwtService jwtService;
     private final EmailService emailService;
     private final OtpService otpService;
+    private final S3StorageService s3StorageService;
 
     public AuthService(NguoiDungRepository nguoiDungRepository,
             VaiTroRepository vaiTroRepository,
             PasswordEncoder passwordEncoder,
             JwtService jwtService,
             EmailService emailService,
-            OtpService otpService) {
+            OtpService otpService,
+            S3StorageService s3StorageService) {
         this.nguoiDungRepository = nguoiDungRepository;
         this.vaiTroRepository = vaiTroRepository;
         this.passwordEncoder = passwordEncoder;
         this.jwtService = jwtService;
         this.emailService = emailService;
         this.otpService = otpService;
+        this.s3StorageService = s3StorageService;
     }
 
     /**
@@ -76,7 +79,7 @@ public class AuthService {
 
         String avtUrl = null;
         if (nd.getAvt() != null && !nd.getAvt().isBlank()) {
-            avtUrl = "https://mediaserverproject.blob.core.windows.net/user/" + nd.getAvt();
+            avtUrl = s3StorageService.getPublicUrlByCategory("user", nd.getAvt());
         }
 
         return LoginResponse.builder()

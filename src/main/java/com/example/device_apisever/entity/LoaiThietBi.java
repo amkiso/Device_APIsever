@@ -9,6 +9,15 @@ import java.math.BigDecimal;
 @Getter @Setter @NoArgsConstructor @AllArgsConstructor
 public class LoaiThietBi {
 
+    @Transient
+    private Integer tongSoLuong;
+
+    @Transient
+    private Integer soConLai;
+
+    @Transient
+    private Integer soDangThue;
+
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "LoaiThietBiID")

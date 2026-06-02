@@ -19,4 +19,6 @@ public class ThietBiByLoaiDTO {
     private String tenKho;              // "Kho A" — JOIN từ bảng Kho
     private LocalDateTime ngayBaoTriTiepTheo;
     private String qrCodeUrl;
+    private String soSerial;
+    private java.math.BigDecimal giaTriMay;
 }

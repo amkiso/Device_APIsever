@@ -90,6 +90,20 @@ public class ThongBaoController {
         thongBaoService.danhDaDoc(thongBaoId, nguoiDungId);
         return ResponseEntity.ok(ApiResponse.ok("Da danh dau doc", null));
     }
+    /**
+     * Đánh dấu tất cả thông báo đã đọc.
+     * PUT /api/thong-bao/da-doc-tat-ca
+     */
+    @PutMapping("/thong-bao/da-doc-tat-ca")
+    public ResponseEntity<ApiResponse<Void>> danhDaDocTatCa(
+            @RequestHeader("Authorization") String authHeader) {
+
+        String token = authHeader.replace("Bearer ", "");
+        Integer nguoiDungId = jwtService.extractNguoiDungId(token);
+
+        thongBaoService.danhDaDocTatCa(nguoiDungId);
+        return ResponseEntity.ok(ApiResponse.ok("Da danh dau doc tat ca", null));
+    }
 
     /**
      * Client đăng ký FCM token sau khi đăng nhập.

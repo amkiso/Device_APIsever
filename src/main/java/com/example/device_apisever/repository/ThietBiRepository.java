@@ -34,5 +34,15 @@ public interface ThietBiRepository extends JpaRepository<ThietBi, Integer> {
      * Lọc thiết bị theo loại thiết bị
      */
     List<ThietBi> findByLoaiThietBiId(Integer loaiThietBiId);
+
+    /**
+     * Đếm số lượng thiết bị theo loại để sinh mã
+     */
+    long countByLoaiThietBiId(Integer loaiThietBiId);
+
+    /**
+     * Đếm số lượng thiết bị theo loại và tình trạng
+     */
+    long countByLoaiThietBiIdAndTinhTrangId(Integer loaiThietBiId, Integer tinhTrangId);
 }
 
