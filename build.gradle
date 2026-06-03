@@ -66,3 +66,16 @@ dependencies {
 tasks.named('test') {
     useJUnitPlatform()
 }
+
+// Thiết lập mã hóa UTF-8 để hiển thị tiếng Việt trên console
+tasks.withType(JavaCompile) {
+    options.encoding = 'UTF-8'
+}
+
+tasks.withType(Test) {
+    systemProperty "file.encoding", "UTF-8"
+}
+
+tasks.named('bootRun') {
+    systemProperty "file.encoding", "UTF-8"
+}

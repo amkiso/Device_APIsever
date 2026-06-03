@@ -92,6 +92,7 @@ public class AuthService {
                 .khoId(nd.getKhoId())
                 .doiMatKhauLanDau(nd.getDoiMatKhauLanDau())
                 .avt(avtUrl)
+                .hasPin(nd.getMaPin() != null && !nd.getMaPin().isEmpty())
                 .build();
     }
 
@@ -175,6 +176,7 @@ public class AuthService {
                 .khoId(null)
                 .doiMatKhauLanDau(false)
                 .avt(null)
+                .hasPin(false)
                 .build();
     }
 

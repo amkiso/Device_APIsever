@@ -27,8 +27,11 @@ public class S3StorageService {
     private final S3Client s3Client;
     private final S3Presigner s3Presigner;
 
-    @Value("${r2.bucket}")
-    private String bucket;
+    @Value("${r2.bucket.public}")
+    private String bucketPublic;
+
+    @Value("${r2.bucket.private}")
+    private String bucketPrivate;
 
     @Value("${r2.endpoint}")
     private String endpoint;
@@ -70,6 +73,20 @@ public class S3StorageService {
         return UUID.randomUUID().toString() + "." + extension;
     }
 
+    private String getTargetBucket(String category) {
+        if ("sign".equalsIgnoreCase(category)) {
+            return bucketPrivate;
+        }
+        return bucketPublic;
+    }
+
+    private String getTargetBucketFromPath(String relativePath) {
+        if (relativePath != null && relativePath.toLowerCase().startsWith("sign/")) {
+            return bucketPrivate;
+        }
+        return bucketPublic;
+    }
+
     /**
      * Lấy đường dẫn tương đối (Relative Path) để lưu vào database.
      * Ví dụ: "product/uuid.jpg"
@@ -85,7 +102,7 @@ public class S3StorageService {
         String key = getRelativePath(category, fileName);
 
         PutObjectRequest objectRequest = PutObjectRequest.builder()
-                .bucket(bucket)
+                .bucket(getTargetBucket(category))
                 .key(key)
                 .contentType(contentType)
                 .build();
@@ -111,7 +128,7 @@ public class S3StorageService {
         if (publicEndpoint != null && !publicEndpoint.isBlank()) {
             return publicEndpoint + "/" + relativePath;
         }
-        return endpoint + "/" + bucket + "/" + relativePath;
+        return endpoint + "/" + getTargetBucketFromPath(relativePath) + "/" + relativePath;
     }
 
     /**
@@ -129,7 +146,7 @@ public class S3StorageService {
             return;
         }
         DeleteObjectRequest deleteObjectRequest = DeleteObjectRequest.builder()
-                .bucket(bucket)
+                .bucket(getTargetBucketFromPath(relativePath))
                 .key(relativePath)
                 .build();
         s3Client.deleteObject(deleteObjectRequest);
@@ -147,7 +164,7 @@ public class S3StorageService {
      */
     public String generateSasReadUrl(String relativePath) {
         GetObjectRequest getObjectRequest = GetObjectRequest.builder()
-                .bucket(bucket)
+                .bucket(getTargetBucketFromPath(relativePath))
                 .key(relativePath)
                 .build();
 
@@ -167,7 +184,7 @@ public class S3StorageService {
         String key = getRelativePath(category, fileName);
 
         PutObjectRequest putOb = PutObjectRequest.builder()
-                .bucket(bucket)
+                .bucket(getTargetBucket(category))
                 .key(key)
                 .contentType(contentType)
                 .build();

@@ -79,6 +79,8 @@ public class SecurityConfig {
                 .requestMatchers("/api/hop-dong/*/xac-nhan-thanh-toan").authenticated()
                 // Điều khoản mẫu: tất cả user đã đăng nhập
                 .requestMatchers(org.springframework.http.HttpMethod.GET, "/api/dieu-khoan-mau/**").authenticated()
+                // Chữ ký: yêu cầu xác thực, chi tiết quyền check trong Controller
+                .requestMatchers("/api/signatures/**").authenticated()
                 .anyRequest().authenticated()
             )
             .addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter.class);

@@ -448,6 +448,66 @@ Xóa ảnh khỏi cả Azure Blob Storage và Database. Server tự phát hiện
   ```
 
 ---
+
+### 8.7. Chữ Ký Điện Tử (Signature)
+Hệ thống sử dụng một Private Bucket riêng biệt trên R2 để lưu trữ chữ ký. Các thao tác đều yêu cầu xác thực bảo mật: chỉ Admin hoặc Khách hàng đứng tên hợp đồng mới có quyền gọi API.
+
+#### Lấy SAS URL để Upload Chữ Ký
+- **URL:** `GET /api/signatures/contract/{hopDongId}/get-upload-url`
+- **Headers:** `Authorization: Bearer <token>`
+- **Query Params:** `?extension=png` hoặc `jpg` (mặc định: `png`)
+- **Response (200 OK):**
+  ```json
+  {
+      "success": true,
+      "message": "Tao SAS URL upload chu ky thanh cong.",
+      "data": {
+          "sasUrl": "https://<account_id>.r2.cloudflarestorage.com/sign/sign/uuid-file.png?...",
+          "fileName": "uuid-file.png",
+          "category": "sign"
+      }
+  }
+  ```
+
+#### Lấy SAS URL để Xem/Đọc Chữ Ký
+- **URL:** `GET /api/signatures/contract/{hopDongId}/read-url?fileName={fileName}`
+- **Headers:** `Authorization: Bearer <token>`
+- **Response (200 OK):**
+  ```json
+  {
+      "success": true,
+      "message": "Tao SAS URL doc chu ky thanh cong.",
+      "data": {
+          "readUrl": "https://<account_id>.r2.cloudflarestorage.com/sign/sign/uuid-file.png?..."
+      }
+  }
+  ```
+
+#### Xác nhận Upload Chữ Ký
+- **URL:** `POST /api/signatures/contract/{hopDongId}/confirm-upload`
+- **Headers:** `Authorization: Bearer <token>`
+- **Body (JSON):**
+  ```json
+  {
+      "fileName": "uuid-file.png"
+  }
+  ```
+- **Response (200 OK):**
+  ```json
+  {
+      "success": true,
+      "message": "Luu thong tin chu ky thanh cong.",
+      "data": {
+          "chuKyId": 1,
+          "hopDongId": 12,
+          "nguoiDungId": 5,
+          "tenFileChuKy": "uuid-file.png",
+          "ngayKy": "2026-06-03T10:00:00"
+      }
+  }
+  ```
+
+---
 ## cập nhật 08/05/2026
 
 ## 📂 9. Danh mục Thiết bị (CRUD)
@@ -1515,6 +1575,160 @@ Quản lý thông tin kho lưu trữ thiết bị.
 
 ---
 
+## 👨‍💼 19. Quản lý Hợp đồng (Admin)
+Phục vụ các chức năng quản lý, theo dõi và xử lý hợp đồng của khách hàng dành cho Admin.
+
+> **Phân quyền:** Tất cả endpoints — Chỉ **ADMIN** (`VaiTroID = 1`)
+>
+> **Xác thực:** Bắt buộc có JWT Token trong Header: `Authorization: Bearer <token>`
+
+### 19.1. Lấy danh sách hợp đồng (Phân trang & Lọc)
+- **URL:** `GET /api/admin/hop-dong`
+- **Query Params (Tùy chọn):**
+  - `page` (int): Trang hiện tại (mặc định 0).
+  - `size` (int): Kích thước trang (mặc định 15).
+  - `q` (string): Từ khóa tìm kiếm (Mã hợp đồng hoặc Tên khách hàng).
+  - `startDate` (ISO 8601): Lọc từ ngày bắt đầu.
+  - `endDate` (ISO 8601): Lọc đến ngày kết thúc.
+  - `trangThaiId` (int): Lọc theo ID trạng thái hợp đồng.
+  - `loaiHopDongId` (int): Lọc theo ID loại hợp đồng.
+- **Response (200 OK):**
+  ```json
+  {
+      "success": true,
+      "message": "Lấy danh sách thành công",
+      "data": {
+          "content": [
+              {
+                  "hopDongId": 145,
+                  "maHopDong": "HD-2026-00145",
+                  "tenKhachHang": "Nguyễn Văn A",
+                  "soDienThoai": "0901234567",
+                  "loaiHopDongId": 1,
+                  "laHoaToc": true,
+                  "tongTienThue": 18000000.00,
+                  "tienCoc": 9000000.00,
+                  "trangThaiId": 1,
+                  "tenTrangThai": "Chờ ký kết",
+                  "ngayLap": "2026-04-15T10:00:00",
+                  "ngayBatDauThue": "2026-04-16T00:00:00",
+                  "ngayDuKienTra": "2027-04-16T00:00:00",
+                  "ngayTraThucTe": null
+              }
+          ],
+          "pageable": {
+              "pageNumber": 0,
+              "pageSize": 15
+          },
+          "totalElements": 1,
+          "totalPages": 1,
+          "last": true
+      }
+  }
+  ```
+
+### 19.2. Lấy chi tiết hợp đồng
+- **URL:** `GET /api/admin/hop-dong/{id}`
+- **Response (200 OK):** Trả về đầy đủ thông tin hợp đồng, thông tin khách hàng, chi phí, danh sách thiết bị và lịch sử bảo trì.
+  *Lưu ý: Nếu `laHoaToc` = false thì `phiHoaToc` = 0.*
+  ```json
+  {
+      "success": true,
+      "message": "Lấy chi tiết thành công",
+      "data": {
+          "hopDongId": 145,
+          "maHopDong": "HD-2026-00145",
+          "loaiHopDongId": 1,
+          "laHoaToc": false,
+          "phiHoaToc": 0,
+          "trangThaiId": 1,
+          "tenTrangThai": "Chờ ký kết",
+          "ngayLap": "2026-04-15T10:00:00",
+          "ngayBatDauThue": "2026-04-16T00:00:00",
+          "ngayDuKienTra": "2027-04-16T00:00:00",
+          "ngayTraThucTe": null,
+          "diaDiemGiao": "123 Đường ABC",
+          "ghiChuKhachHang": "Giao gấp",
+          "lyDoHuy": null,
+          "khachHang": {
+              "nguoiDungId": 5,
+              "hoTen": "Nguyễn Văn A",
+              "email": "nva@gmail.com",
+              "soDienThoai": "0901234567",
+              "cccd": "012345678901"
+          },
+          "chiPhi": {
+              "tongTienThue": 18000000.00,
+              "tienCoc": 9000000.00,
+              "thueVat": 1800000.00,
+              "phiTreHanPhanTram": 3.0,
+              "soNgayTreHanMoiKy": 3,
+              "soNgayViPhamChamDut": 15,
+              "phiVeSinhChuyenSau": 1000000.00,
+              "phiGianDoanPhanTram": 50.0
+          },
+          "danhSachThietBi": [
+              {
+                  "chiTietId": 1,
+                  "thietBiId": 5,
+                  "maTaiSan": "TB001",
+                  "tenLoaiThietBi": "Máy phát điện",
+                  "soSerial": "SN123",
+                  "giaThueThang": 1500000.00,
+                  "giaTriMay": 50000000.00,
+                  "tinhTrangId": 1,
+                  "tenTinhTrang": "Sẵn sàng",
+                  "hinhAnhUrl": "https://url-anh-thiet-bi.jpg",
+                  "tinhTrangGiao": "Mới 90%",
+                  "tinhTrangTra": null,
+                  "ngayGiao": null,
+                  "ngayTra": null
+              }
+          ],
+          "lichSuBaoTri": []
+      }
+  }
+  ```
+
+### 19.3. Cập nhật Trạng thái / Hủy Hợp đồng
+Thay đổi trạng thái hợp đồng theo luồng quy định. Nếu Hủy hợp đồng (thường là Trạng thái 6) thì cần truyền thêm lý do hủy. Sau khi cập nhật, hệ thống tự động gửi Push Notification đến điện thoại khách hàng.
+- **URL:** `PUT /api/admin/hop-dong/{id}/trang-thai`
+- **Body Request (JSON):**
+  ```json
+  {
+      "trangThaiId": 6,
+      "lyDoHuy": "Khách hàng không nhận hàng"
+  }
+  ```
+- **Response (200 OK):**
+  ```json
+  {
+      "success": true,
+      "message": "Cập nhật trạng thái thành công",
+      "data": null
+  }
+  ```
+
+### 19.4. Lấy thông tin Chữ ký điện tử
+Chỉ cho phép Admin hoặc Người dùng sở hữu xem chữ ký của họ.
+- **URL:** `GET /api/admin/hop-dong/{id}/chu-ky`
+- **Response (200 OK):** Trả về trạng thái ký kết và URL chữ ký (nếu có).
+  ```json
+  {
+      "success": true,
+      "message": "Lấy chữ ký thành công",
+      "data": {
+          "hopDongId": 145,
+          "maHopDong": "HD-2026-00145",
+          "daKy": true,
+          "ngayKy": "2026-04-16T10:30:00",
+          "urlChuKy": "https://url-anh-chu-ky-co-han-su-dung.jpg"
+      }
+  }
+  ```
+
+---
+
 ## 📋 Tổng hợp tất cả Endpoints
 
 | # | Method | Endpoint | Mô tả | Quyền |
@@ -1583,4 +1797,10 @@ Quản lý thông tin kho lưu trữ thiết bị.
 | 62 | POST | `/api/hop-dong/{id}/thanh-toan-demo` | Thanh toán Demo | KHÁCH HÀNG |
 | 63 | GET | `/api/dieu-khoan-mau` | Lấy điều khoản mẫu HĐ | Authenticated |
 | 64 | GET | `/api/kho` | Lấy danh sách kho | Authenticated |
+| 65 | POST | `/api/user/setup-pin` | Thiết lập mã PIN | Authenticated |
+| 66 | PUT | `/api/user/change-pin` | Đổi mã PIN | Authenticated |
+| 67 | GET | `/api/admin/hop-dong` | Lấy DS hợp đồng (phân trang, lọc) | ADMIN |
+| 68 | GET | `/api/admin/hop-dong/{id}` | Lấy chi tiết hợp đồng | ADMIN |
+| 69 | PUT | `/api/admin/hop-dong/{id}/trang-thai` | Cập nhật trạng thái hợp đồng | ADMIN |
+| 70 | GET | `/api/admin/hop-dong/{id}/chu-ky` | Lấy thông tin chữ ký điện tử | ADMIN |
 | — | GET | `/uploads/qrcode/{file}.png` | Truy cập ảnh QR (static) | Public |

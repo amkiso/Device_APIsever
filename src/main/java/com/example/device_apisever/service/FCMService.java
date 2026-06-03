@@ -52,6 +52,8 @@ public class FCMService {
      */
     @Async
     public void sendToDevice(String fcmToken, String title, String body) {
+        System.out.println("==== FCM LOG: Bắt đầu gửi notification tới token: " + fcmToken + " ====");
+        System.out.println("==== FCM LOG: Title: " + title + " | Body: " + body + " ====");
         try {
             Message message = Message.builder()
                     .setToken(fcmToken)
@@ -62,7 +64,7 @@ public class FCMService {
                     .build();
 
             String response = FirebaseMessaging.getInstance().send(message);
-            System.out.println("FCM gửi thành công: " + response);
+            System.out.println("==== FCM LOG: Gửi thành công tới " + fcmToken + ". Response: " + response + " ====");
         } catch (Exception e) {
             System.err.println("FCM lỗi khi gửi tới token " + fcmToken + ": " + e.getMessage());
         }
@@ -73,7 +75,9 @@ public class FCMService {
      */
     @Async
     public void sendToUsers(List<Integer> nguoiDungIds, String title, String body) {
+        System.out.println("==== FCM LOG: Tìm token cho " + nguoiDungIds.size() + " người dùng... ====");
         List<FCMToken> tokens = fcmTokenRepository.findByNguoiDungIdIn(nguoiDungIds);
+        System.out.println("==== FCM LOG: Đã tìm thấy " + tokens.size() + " tokens. ====");
         for (FCMToken t : tokens) {
             sendToDevice(t.getToken(), title, body);
         }
@@ -84,7 +88,9 @@ public class FCMService {
      */
     @Async
     public void sendToUser(Integer nguoiDungId, String title, String body) {
+        System.out.println("==== FCM LOG: Tìm token cho người dùng ID " + nguoiDungId + " ====");
         List<FCMToken> tokens = fcmTokenRepository.findByNguoiDungId(nguoiDungId);
+        System.out.println("==== FCM LOG: Đã tìm thấy " + tokens.size() + " tokens. ====");
         for (FCMToken t : tokens) {
             sendToDevice(t.getToken(), title, body);
         }

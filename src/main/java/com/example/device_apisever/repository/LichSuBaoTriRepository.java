@@ -35,4 +35,9 @@ public interface LichSuBaoTriRepository extends JpaRepository<LichSuBaoTri, Inte
      * Kiểm tra xem thiết bị có lịch sử bảo trì không
      */
     boolean existsByThietBiId(Integer thietBiId);
+
+    /**
+     * Lấy lịch sử bảo trì theo hợp đồng
+     */
+    List<LichSuBaoTri> findByHopDongId(Integer hopDongId);
 }

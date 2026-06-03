@@ -288,7 +288,7 @@ public class HopDongService {
                 .hopDongId(hopDongId)
                 .nguoiDungId(khach.getNguoiDungId())
                 .tenFileChuKy(relativePath) // LƯU RELATIVE PATH
-                .maPinHash(passwordEncoder.encode(maPin))
+
                 .ipAddress(ipAddress)
                 .thietBiKy(thietBiKy)
                 .build();

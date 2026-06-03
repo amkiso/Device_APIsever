@@ -13,4 +13,5 @@ public class LoginResponse {
     private Integer khoId;           // null cho Admin và KH
     private Boolean doiMatKhauLanDau; // true = phải đổi mật khẩu trước khi sử dụng
     private String avt;
+    private Boolean hasPin; // true = đã thiết lập mã PIN
 }

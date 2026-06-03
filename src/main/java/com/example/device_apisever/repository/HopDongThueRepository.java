@@ -84,4 +84,23 @@ public interface HopDongThueRepository extends JpaRepository<HopDongThue, Intege
     @Query("SELECT COUNT(hd) FROM HopDongThue hd " +
            "WHERE hd.nguoiDungKhachId = :nguoiDungId")
     long countByNguoiDungKhachId(@Param("nguoiDungId") Integer nguoiDungId);
+
+    /**
+     * Tìm kiếm và lọc hợp đồng (dành cho Admin)
+     */
+    @Query("SELECT hd FROM HopDongThue hd " +
+           "LEFT JOIN NguoiDung nd ON hd.nguoiDungKhachId = nd.nguoiDungId " +
+           "WHERE (:q IS NULL OR CAST(hd.hopDongId AS string) LIKE %:q% OR nd.hoTen LIKE %:q%) " +
+           "AND (:startDate IS NULL OR hd.ngayLap >= :startDate) " +
+           "AND (:endDate IS NULL OR hd.ngayLap <= :endDate) " +
+           "AND (:trangThaiId IS NULL OR hd.trangThaiId = :trangThaiId) " +
+           "AND (:loaiHopDongId IS NULL OR hd.loaiHopDongId = :loaiHopDongId) " +
+           "ORDER BY hd.ngayLap DESC")
+    org.springframework.data.domain.Page<HopDongThue> searchAndFilter(
+            @Param("q") String q,
+            @Param("startDate") LocalDateTime startDate,
+            @Param("endDate") LocalDateTime endDate,
+            @Param("trangThaiId") Integer trangThaiId,
+            @Param("loaiHopDongId") Integer loaiHopDongId,
+            org.springframework.data.domain.Pageable pageable);
 }

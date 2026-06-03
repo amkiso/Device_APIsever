@@ -67,6 +67,9 @@ public class NguoiDung {
     @Column(name = "Avt", length = 50)
     private String avt;
 
+    @Column(name = "MaPin", length = 255)
+    private String maPin;
+
     // ── Thông tin CCCD cho hợp đồng ──
     @Column(name = "CCCD", length = 20)
     private String cccd;

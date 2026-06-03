@@ -26,8 +26,7 @@ public class ChuKyDienTu {
     @Column(name = "TenFileChuKy", nullable = false, length = 255)
     private String tenFileChuKy;
 
-    @Column(name = "MaPinHash", nullable = false, length = 255)
-    private String maPinHash;
+
 
     @Column(name = "NgayKy", nullable = false)
     private LocalDateTime ngayKy;

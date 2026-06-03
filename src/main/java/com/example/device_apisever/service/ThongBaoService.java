@@ -96,6 +96,7 @@ public class ThongBaoService {
         }
 
         // 4. Gửi push notification qua Firebase (bất đồng bộ)
+        System.out.println("==== THONG BAO LOG: Tạo xong nội dung DB, chuẩn bị gửi FCM tới " + nguoiDungIds.size() + " người dùng. ====");
         fcmService.sendToUsers(nguoiDungIds, request.getTieuDe(), request.getNoiDung());
 
         return thongBao;
