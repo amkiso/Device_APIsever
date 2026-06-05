@@ -103,4 +103,14 @@ public interface HopDongThueRepository extends JpaRepository<HopDongThue, Intege
             @Param("trangThaiId") Integer trangThaiId,
             @Param("loaiHopDongId") Integer loaiHopDongId,
             org.springframework.data.domain.Pageable pageable);
+
+    boolean existsByNguoiDungKhachId(Integer nguoiDungId);
+    
+    boolean existsByNguoiDungTaoId(Integer nguoiDungId);
+
+    @Query("SELECT COALESCE(SUM(hd.tongTienThue), 0) FROM HopDongThue hd WHERE hd.trangThaiId IN :trangThais")
+    java.math.BigDecimal sumTongGiaTriByTrangThaiIn(@Param("trangThais") java.util.List<Integer> trangThais);
+
+    long countByTrangThaiId(Integer trangThaiId);
+    long countByTrangThaiIdIn(List<Integer> trangThaiIds);
 }

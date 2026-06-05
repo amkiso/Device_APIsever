@@ -53,7 +53,10 @@ public class ThietBiService {
     }
 
     // 1. Lấy tất cả thiết bị
-    public List<ThietBi> findAll() {
+    public List<ThietBi> findAll(Integer khoHienTaiId) {
+        if (khoHienTaiId != null) {
+            return thietBiRepository.findByKhoHienTaiId(khoHienTaiId);
+        }
         return thietBiRepository.findAll();
     }
 
@@ -182,7 +185,7 @@ public class ThietBiService {
         List<ThietBiDetailResponse.HinhAnhInfo> hinhAnhInfos = hinhAnhs.stream()
                 .map(ha -> ThietBiDetailResponse.HinhAnhInfo.builder()
                         .hinhAnhId(ha.getHinhAnhId())
-                        .urlAnh(s3StorageService.getPublicUrl(ha.getUrlAnh())) // Convert qua public url
+                        .urlAnh(getFullImageUrlFromHinhAnh(ha)) // Convert qua public url
                         .loaiAnhId(ha.getLoaiAnhId())
                         .ngayChup(ha.getNgayChup())
                         .build())
@@ -220,12 +223,25 @@ public class ThietBiService {
     }
 
     /**
+     * Lấy danh sách thiết bị kèm chi tiết cho một kho
+     */
+    public List<ThietBiDetailResponse> findDetailsByKhoHienTaiId(Integer khoHienTaiId) {
+        List<ThietBi> thietBis = thietBiRepository.findByKhoHienTaiId(khoHienTaiId);
+        return thietBis.stream().map(tb -> findDetailByMaTaiSan(tb.getMaTaiSan())).collect(Collectors.toList());
+    }
+
+    /**
      * 6. Lấy danh sách thiết bị cụ thể (serial) theo loại thiết bị.
      * Gộp dữ liệu từ: ThietBi, TinhTrangThietBi, Kho.
      * Dùng cho: GET /api/thiet-bi?loaiThietBiId={id}
      */
-    public List<com.example.device_apisever.dto.ThietBiByLoaiDTO> findByLoaiThietBiId(Integer loaiThietBiId) {
-        List<ThietBi> thietBis = thietBiRepository.findByLoaiThietBiId(loaiThietBiId);
+    public List<com.example.device_apisever.dto.ThietBiByLoaiDTO> findByLoaiThietBiId(Integer loaiThietBiId, Integer khoHienTaiId) {
+        List<ThietBi> thietBis;
+        if (khoHienTaiId != null) {
+            thietBis = thietBiRepository.findByLoaiThietBiIdAndKhoHienTaiId(loaiThietBiId, khoHienTaiId);
+        } else {
+            thietBis = thietBiRepository.findByLoaiThietBiId(loaiThietBiId);
+        }
         return thietBis.stream().map(tb -> {
             // Lấy tên tình trạng
             String tenTinhTrang = null;
@@ -284,5 +300,19 @@ public class ThietBiService {
                 
         tb.setTinhTrangId(tinhTrangId);
         return thietBiRepository.save(tb);
+    }
+    private String getFullImageUrlFromHinhAnh(HinhAnhThietBi ha) {
+        if (ha == null || ha.getUrlAnh() == null || ha.getUrlAnh().isBlank()) return null;
+        String fileName = ha.getUrlAnh();
+        if (fileName.startsWith("http")) return fileName;
+        if (fileName.contains("/")) {
+            return s3StorageService.getPublicUrl(fileName);
+        }
+        
+        String category = "products";
+        if (ha.getBanGiaoId() != null || ha.getBaoTriId() != null || (ha.getLoaiAnhId() != null && ha.getLoaiAnhId() == 2)) {
+            category = "work";
+        }
+        return s3StorageService.getPublicUrlByCategory(category, fileName);
     }
 }

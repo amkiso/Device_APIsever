@@ -6,6 +6,7 @@ import com.example.device_apisever.dto.request.SetupPinRequest;
 import com.example.device_apisever.entity.NguoiDung;
 import com.example.device_apisever.repository.NguoiDungRepository;
 import com.example.device_apisever.config.JwtService;
+import com.example.device_apisever.dto.request.VerifyPinRequest;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
 import org.springframework.http.ResponseEntity;
@@ -68,5 +69,22 @@ public class UserController {
         nguoiDungRepository.save(nd);
 
         return ResponseEntity.ok(ApiResponse.ok("Đổi mã PIN thành công", null));
+    }
+
+    @PostMapping("/verify-pin")
+    public ResponseEntity<ApiResponse<Void>> verifyPin(@Valid @RequestBody VerifyPinRequest request, HttpServletRequest httpRequest) {
+        Integer userId = extractUserId(httpRequest);
+        NguoiDung nd = nguoiDungRepository.findById(userId)
+                .orElseThrow(() -> new RuntimeException("Không tìm thấy người dùng"));
+
+        if (nd.getMaPin() == null || nd.getMaPin().isEmpty()) {
+            return ResponseEntity.badRequest().body(ApiResponse.error("Người dùng chưa thiết lập mã PIN"));
+        }
+
+        if (!passwordEncoder.matches(request.getPin(), nd.getMaPin())) {
+            return ResponseEntity.badRequest().body(ApiResponse.error("Mã PIN không chính xác"));
+        }
+
+        return ResponseEntity.ok(ApiResponse.ok("Mã PIN hợp lệ", null));
     }
 }

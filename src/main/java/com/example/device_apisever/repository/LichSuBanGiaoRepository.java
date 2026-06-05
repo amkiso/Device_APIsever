@@ -19,4 +19,10 @@ public interface LichSuBanGiaoRepository extends JpaRepository<LichSuBanGiao, In
            "WHERE CAST(bg.ngayGiaoNhan AS date) = CAST(:today AS date) " +
            "ORDER BY bg.ngayGiaoNhan ASC")
     List<LichSuBanGiao> findBanGiaoHomNay(@Param("today") LocalDateTime today);
+
+    List<LichSuBanGiao> findByHopDongId(Integer hopDongId);
+
+    List<LichSuBanGiao> findByHopDongIdAndLoaiGiaoDichId(Integer hopDongId, Integer loaiGiaoDichId);
+
+    boolean existsByNguoiDungThucHienId(Integer nguoiDungId);
 }

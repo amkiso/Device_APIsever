@@ -29,4 +29,13 @@ public interface ThongBaoNguoiDungRepository extends JpaRepository<ThongBaoNguoi
      * Tìm bản ghi cụ thể (để đánh dấu đã đọc)
      */
     Optional<ThongBaoNguoiDung> findByThongBaoIdAndNguoiDungId(Integer thongBaoId, Integer nguoiDungId);
+
+    void deleteByThongBaoId(Integer thongBaoId);
+
+    long countByThongBaoId(Integer thongBaoId);
+
+    long countByThongBaoIdAndDaDoc(Integer thongBaoId, Boolean daDoc);
+
+    @Query("SELECT tbnd.thongBaoId FROM ThongBaoNguoiDung tbnd WHERE tbnd.nguoiDungId = :nguoiDungId")
+    List<Integer> findThongBaoIdsByNguoiDungId(@Param("nguoiDungId") Integer nguoiDungId);
 }

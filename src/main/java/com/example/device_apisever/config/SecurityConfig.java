@@ -57,7 +57,7 @@ public class SecurityConfig {
                 // Ảnh User: Mọi user đăng nhập đều có thể cập nhật avatar
                 .requestMatchers("/api/images/user/**").authenticated()
                 // Ảnh Work: KTV có thể cập nhật ảnh bảo trì
-                .requestMatchers("/api/images/work/**").hasAnyRole("ADMIN", "THU_KHO", "KTV")
+                .requestMatchers("/api/images/work/**").hasAnyRole("ADMIN", "THU_KHO", "KY_THUAT")
                 // Ảnh Products và các phần khác: ADMIN, THU_KHO
                 .requestMatchers("/api/images/**").hasAnyRole("ADMIN", "THU_KHO")
                 // Nhà cung cấp: chỉ GET
@@ -67,6 +67,12 @@ public class SecurityConfig {
                 // Địa chỉ giao hàng: chỉ Khách hàng
                 .requestMatchers("/api/dia-chi/**").hasRole("KHACH_HANG")
                 // Hợp đồng: tạo & ký chỉ Khách hàng, callback thanh toán authenticated
+                .requestMatchers(org.springframework.http.HttpMethod.GET, "/api/admin/hop-dong/**").hasAnyRole("ADMIN", "THU_KHO", "KY_THUAT")
+                .requestMatchers(org.springframework.http.HttpMethod.PUT, "/api/admin/hop-dong/*/trang-thai").hasAnyRole("ADMIN", "THU_KHO")
+                // Lệnh chuyển kho: GET cho ADMIN, THU_KHO, KY_THUAT
+                .requestMatchers(org.springframework.http.HttpMethod.GET, "/api/admin/lenh-chuyen-kho/**").hasAnyRole("ADMIN", "THU_KHO", "KY_THUAT")
+                .requestMatchers(org.springframework.http.HttpMethod.POST, "/api/admin/lenh-chuyen-kho/**").hasAnyRole("ADMIN", "THU_KHO")
+                .requestMatchers(org.springframework.http.HttpMethod.PUT, "/api/admin/lenh-chuyen-kho/**").hasAnyRole("ADMIN", "THU_KHO")
                 .requestMatchers("/api/hop-dong/tao").hasRole("KHACH_HANG")
                 .requestMatchers("/api/hop-dong/*/ky-ket").hasRole("KHACH_HANG")
                 .requestMatchers("/api/hop-dong/cua-toi").hasRole("KHACH_HANG")

@@ -14,6 +14,8 @@ public interface LoaiThietBiRepository extends JpaRepository<LoaiThietBi, Intege
      */
     List<LoaiThietBi> findByDanhMucId(Integer danhMucId);
 
+    boolean existsByNhaCungCapId(Integer nhaCungCapId);
+
     /**
      * Tìm kiếm loại thiết bị theo tên (LIKE %keyword%)
      */

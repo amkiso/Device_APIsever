@@ -18,7 +18,7 @@ public class PhieuNhap {
     @Column(name = "NhaCungCapID", nullable = false)
     private Integer nhaCungCapId;
 
-    @Column(name = "NhanVienNhapID", nullable = false)
+    @Column(name = "NguoiDungNhapID", nullable = false)
     private Integer nhanVienNhapId;
 
     @Column(name = "NgayNhap", nullable = false)

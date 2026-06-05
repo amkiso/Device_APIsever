@@ -128,15 +128,22 @@ public class AdminHopDongService {
                 LoaiThietBi loaiTB = loaiThietBiRepository.findById(tb.getLoaiThietBiId()).orElse(null);
                 if (loaiTB != null) {
                     tenLoai = loaiTB.getTenLoaiThietBi();
-                    hinhAnhUrl = s3StorageService.getPublicUrl(loaiTB.getAnhDaiDien());
+                    hinhAnhUrl = getFullImageUrl(loaiTB.getAnhDaiDien());
                 }
                 TinhTrangThietBi tt = tinhTrangThietBiRepository.findById(tinhTrangId).orElse(null);
                 if (tt != null) tenTinhTrang = tt.getTenTinhTrang();
                 
-                // Thử lấy ảnh thực tế của thiết bị nếu có
+                // Thử lấy ảnh thực tế của thiết bị (chỉ lấy ảnh sản phẩm, không lấy ảnh nghiệp vụ)
                 List<HinhAnhThietBi> anhTBs = hinhAnhThietBiRepository.findByThietBiId(tb.getThietBiId());
-                if (!anhTBs.isEmpty() && anhTBs.get(0).getUrlAnh() != null) {
-                    hinhAnhUrl = s3StorageService.getPublicUrl(anhTBs.get(0).getUrlAnh());
+                List<HinhAnhThietBi> productImages = anhTBs.stream()
+                        .filter(ha -> ha.getBanGiaoId() == null && ha.getBaoTriId() == null && (ha.getLoaiAnhId() == null || ha.getLoaiAnhId() == 1))
+                        .collect(Collectors.toList());
+                
+                if (!productImages.isEmpty()) {
+                    HinhAnhThietBi latestAnh = productImages.get(productImages.size() - 1); // Lấy ảnh sản phẩm mới nhất
+                    if (latestAnh.getUrlAnh() != null) {
+                        hinhAnhUrl = getFullImageUrlFromHinhAnh(latestAnh);
+                    }
                 }
             }
             return ThietBiHopDongResponse.builder()
@@ -266,10 +273,34 @@ public class AdminHopDongService {
                 .hopDongId(ck.getHopDongId())
                 .nguoiDungId(ck.getNguoiDungId())
                 .tenNguoiDung(nd != null ? nd.getHoTen() : "")
-                .urlChuKy(s3StorageService.getPublicUrl(ck.getTenFileChuKy()))
+                .urlChuKy(s3StorageService.generateSasReadUrl(ck.getTenFileChuKy()))
                 .ngayKy(ck.getNgayKy())
                 .ipAddress(ck.getIpAddress())
                 .thietBiKy(ck.getThietBiKy())
                 .build();
+    }
+
+    private String getFullImageUrl(String fileName) {
+        if (fileName == null || fileName.isBlank()) return null;
+        if (fileName.startsWith("http")) return fileName;
+        if (fileName.contains("/")) {
+            return s3StorageService.getPublicUrl(fileName);
+        }
+        return s3StorageService.getPublicUrlByCategory("products", fileName);
+    }
+    
+    private String getFullImageUrlFromHinhAnh(HinhAnhThietBi ha) {
+        if (ha == null || ha.getUrlAnh() == null || ha.getUrlAnh().isBlank()) return null;
+        String fileName = ha.getUrlAnh();
+        if (fileName.startsWith("http")) return fileName;
+        if (fileName.contains("/")) {
+            return s3StorageService.getPublicUrl(fileName);
+        }
+        
+        String category = "products";
+        if (ha.getBanGiaoId() != null || ha.getBaoTriId() != null || (ha.getLoaiAnhId() != null && ha.getLoaiAnhId() == 2)) {
+            category = "work";
+        }
+        return s3StorageService.getPublicUrlByCategory(category, fileName);
     }
 }

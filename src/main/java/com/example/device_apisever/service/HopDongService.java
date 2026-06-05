@@ -266,7 +266,7 @@ public class HopDongService {
      */
     @Transactional
     public KyHopDongResponse kyHopDong(String taiKhoan, Integer hopDongId,
-                                        byte[] chuKyData, String maPin,
+                                        String fileName, String maPin,
                                         String ipAddress, String thietBiKy) {
         NguoiDung khach = resolveNguoiDung(taiKhoan);
         HopDongThue hd = hopDongRepo.findById(hopDongId)
@@ -275,13 +275,12 @@ public class HopDongService {
         if (!hd.getNguoiDungKhachId().equals(khach.getNguoiDungId())) {
             throw new BusinessException("Bạn không có quyền ký hợp đồng này");
         }
-        if (hd.getTrangThaiId() != 1) {
+        if (hd.getTrangThaiId() != 2) {
             throw new BusinessException("Hợp đồng không ở trạng thái chờ ký kết");
         }
 
-        // Sinh tên file duy nhất và upload lên container "sign"
-        String fileName = s3StorageService.generateFileName("png");
-        String relativePath = s3StorageService.uploadByteData("sign", fileName, chuKyData, "image/png");
+        // Lấy relative path từ fileName (client đã upload)
+        String relativePath = s3StorageService.getRelativePath("sign", fileName);
 
         // Lưu tên file vào DB (Relative path)
         ChuKyDienTu ck = ChuKyDienTu.builder()

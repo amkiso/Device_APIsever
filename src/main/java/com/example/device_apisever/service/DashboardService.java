@@ -121,4 +121,80 @@ public class DashboardService {
                 .nhacNhoHomNay(nhacNhoHomNay)
                 .build();
     }
+
+    /**
+     * Lấy dữ liệu thống kê cho Thủ Kho
+     */
+    public com.example.device_apisever.dto.ThuKhoDashboardResponse getThuKhoDashboard(Integer khoId) {
+        if (khoId == null) {
+            throw new RuntimeException("Tài khoản chưa được phân công kho.");
+        }
+
+        long tongSoThietBi = thietBiRepository.countByKhoHienTaiId(khoId);
+        long soThietBiDangThue = thietBiRepository.countByKhoHienTaiIdAndTinhTrangId(khoId, 2);
+        long soThietBiThanhLyHong = thietBiRepository.countByKhoHienTaiIdAndTinhTrangId(khoId, 4);
+        long soThietBiDangBaoTri = thietBiRepository.countByKhoHienTaiIdAndTinhTrangId(khoId, 3);
+        long tonKhoHienTai = thietBiRepository.countByKhoHienTaiIdAndTinhTrangId(khoId, 1);
+        
+        long soHopDongChoDuyet = hopDongThueRepository.countByTrangThaiId(1);
+        long soHopDongSapGiao = hopDongThueRepository.countByTrangThaiId(3);
+
+        List<NhacNhoItem> nhacNhoHomNay = new ArrayList<>();
+        // 1. Nhắc nhở hợp đồng cần giao hôm nay
+        LocalDateTime now = LocalDateTime.now();
+        List<HopDongThue> hopDongSapGiao = hopDongThueRepository.findHopDongSapDenHan(now.minusDays(7), now.plusDays(7));
+        for (HopDongThue hd : hopDongSapGiao) {
+            if (hd.getTrangThaiId() == 3) {
+                nhacNhoHomNay.add(NhacNhoItem.builder()
+                        .loai("HOP_DONG")
+                        .tieuDe("Hợp đồng #" + hd.getHopDongId() + " chờ giao thiết bị")
+                        .moTa("Địa điểm: " + hd.getDiaDiemGiao())
+                        .referenceId(hd.getHopDongId())
+                        .build());
+            }
+        }
+
+        return com.example.device_apisever.dto.ThuKhoDashboardResponse.builder()
+                .tongSoThietBi(tongSoThietBi)
+                .soThietBiDangThue(soThietBiDangThue)
+                .soThietBiThanhLyHong(soThietBiThanhLyHong)
+                .soThietBiDangBaoTri(soThietBiDangBaoTri)
+                .soHopDongChoDuyet(soHopDongChoDuyet)
+                .soHopDongSapGiao(soHopDongSapGiao)
+                .tonKhoHienTai(tonKhoHienTai)
+                .nhacNhoHomNay(nhacNhoHomNay)
+                .build();
+    }
+
+    /**
+     * Lấy dữ liệu thống kê cho Kỹ thuật viên
+     */
+    public com.example.device_apisever.dto.KtvDashboardResponse getKtvDashboard(Integer nguoiDungId) {
+        long soPhieuDaHoanThanh = lichSuBaoTriRepository.countByNguoiDungBaoTriIdAndTrangThaiId(nguoiDungId, 2);
+        long soPhieuChoNhan = lichSuBaoTriRepository.countByTrangThaiId(4); // Phiếu chờ nhận (chung)
+        long soPhieuDangThucHien = lichSuBaoTriRepository.countByNguoiDungBaoTriIdAndTrangThaiIdIn(nguoiDungId, java.util.Arrays.asList(1, 5));
+        
+        long soYeuCauGiaoNhan = hopDongThueRepository.countByTrangThaiIdIn(java.util.Arrays.asList(3, 8));
+
+        List<NhacNhoItem> lichBaoTriHomNay = new ArrayList<>();
+        LocalDateTime now = LocalDateTime.now();
+        List<LichSuBaoTri> baoTris = lichSuBaoTriRepository.findLichBaoTriHomNayChoKtv(nguoiDungId, now);
+        
+        for (LichSuBaoTri bt : baoTris) {
+            lichBaoTriHomNay.add(NhacNhoItem.builder()
+                    .loai("BAO_TRI")
+                    .tieuDe("Phiếu bảo trì #" + bt.getBaoTriId() + " cần xử lý")
+                    .moTa(bt.getNoiDungBaoTri() != null ? bt.getNoiDungBaoTri() : "Không có ghi chú")
+                    .referenceId(bt.getBaoTriId())
+                    .build());
+        }
+
+        return com.example.device_apisever.dto.KtvDashboardResponse.builder()
+                .soPhieuDaHoanThanh(soPhieuDaHoanThanh)
+                .soPhieuChoNhan(soPhieuChoNhan)
+                .soPhieuDangThucHien(soPhieuDangThucHien)
+                .soYeuCauGiaoNhan(soYeuCauGiaoNhan)
+                .lichBaoTriHomNay(lichBaoTriHomNay)
+                .build();
+    }
 }

@@ -84,31 +84,9 @@ public class SignatureController {
     }
 
     /**
-     * Xác nhận đã upload chữ ký xong và lưu vào DB.
+     * Xác nhận upload đã được gộp chung vào /api/hop-dong/{id}/ky-ket.
+     * Vui lòng gọi API đó để xác nhận và thay đổi trạng thái hợp đồng.
      */
-    @PostMapping("/contract/{hopDongId}/confirm-upload")
-    public ResponseEntity<ApiResponse<ChuKyDienTu>> confirmUpload(
-            @PathVariable Integer hopDongId,
-            @RequestBody Map<String, String> payload,
-            HttpServletRequest request) {
-
-        String fileName = payload.get("fileName");
-        if (fileName == null || fileName.isBlank()) {
-            return ResponseEntity.badRequest().body(ApiResponse.error("Thieu fileName trong request body."));
-        }
-
-        validateAccess(hopDongId, request);
-        Integer nguoiDungId = extractNguoiDungIdFromToken(request);
-
-        ChuKyDienTu chuKy = ChuKyDienTu.builder()
-                .hopDongId(hopDongId)
-                .nguoiDungId(nguoiDungId)
-                .tenFileChuKy(fileName)
-                .build();
-
-        ChuKyDienTu saved = chuKyDienTuRepository.save(chuKy);
-        return ResponseEntity.ok(ApiResponse.ok("Luu thong tin chu ky thanh cong.", saved));
-    }
 
     /**
      * Kiểm tra quyền truy cập: Phải là Admin hoặc Khách hàng sở hữu hợp đồng.

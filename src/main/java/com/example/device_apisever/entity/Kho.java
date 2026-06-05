@@ -24,4 +24,11 @@ public class Kho {
 
     @Column(name = "SoDienThoai", length = 20)
     private String soDienThoai;
+
+    @Column(name = "QuanLyID")
+    private Integer quanLyId;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "QuanLyID", insertable = false, updatable = false)
+    private NguoiDung quanLy;
 }

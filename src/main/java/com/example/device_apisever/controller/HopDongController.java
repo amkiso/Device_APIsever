@@ -36,20 +36,18 @@ public class HopDongController {
     /**
      * POST /api/hop-dong/{id}/ky-ket — Ký hợp đồng điện tử
      */
-    @PostMapping(value = "/{id}/ky-ket", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    @PostMapping(value = "/{id}/ky-ket", consumes = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<ApiResponse<KyHopDongResponse>> kyHopDong(
             Authentication auth,
             @PathVariable Integer id,
-            @RequestParam("chuKy") MultipartFile chuKy,
-            @RequestParam("maPin") String maPin,
+            @Valid @RequestBody KyHopDongRequest request,
             HttpServletRequest httpRequest) {
         try {
             String ip = httpRequest.getRemoteAddr();
             String device = httpRequest.getHeader("User-Agent");
-            byte[] chuKyData = chuKy.getBytes();
 
             KyHopDongResponse res = hopDongService.kyHopDong(
-                    auth.getName(), id, chuKyData, maPin, ip, device);
+                    auth.getName(), id, request.getFileName(), request.getMaPin(), ip, device);
             return ResponseEntity.ok(ApiResponse.ok("Ký hợp đồng thành công", res));
         } catch (Exception e) {
             return ResponseEntity.badRequest()

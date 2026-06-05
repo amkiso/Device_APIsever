@@ -2,6 +2,7 @@ package com.example.device_apisever.service;
 
 import com.example.device_apisever.dto.ThongBaoRequest;
 import com.example.device_apisever.dto.ThongBaoResponse;
+import com.example.device_apisever.dto.AdminThongBaoResponse;
 import com.example.device_apisever.entity.NguoiDung;
 import com.example.device_apisever.entity.ThongBao;
 import com.example.device_apisever.entity.ThongBaoNguoiDung;
@@ -10,6 +11,9 @@ import com.example.device_apisever.exception.ResourceNotFoundException;
 import com.example.device_apisever.repository.NguoiDungRepository;
 import com.example.device_apisever.repository.ThongBaoNguoiDungRepository;
 import com.example.device_apisever.repository.ThongBaoRepository;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -167,5 +171,58 @@ public class ThongBaoService {
         }
         
         thongBaoNguoiDungRepository.saveAll(danhSachChuaDoc);
+    }
+
+    /**
+     * Admin: Lấy tất cả thông báo phân trang.
+     * @param page số trang (0-indexed)
+     * @param size số item/trang (mặc định 20)
+     * @param nguoiDungId nếu có → chỉ lấy TB gửi cho user này
+     * @param keyword nếu có → lọc tieuDe LIKE %keyword%
+     * @return Page<AdminThongBaoResponse>
+     */
+    public Page<AdminThongBaoResponse> layTatCaThongBaoAdmin(int page, int size, Integer nguoiDungId, String keyword) {
+        Pageable pageable = PageRequest.of(page, size);
+        Page<ThongBao> thongBaoPage;
+
+        if (nguoiDungId != null) {
+            // Lọc: lấy danh sách thongBaoId mà user đã nhận
+            List<Integer> thongBaoIds = thongBaoNguoiDungRepository.findThongBaoIdsByNguoiDungId(nguoiDungId);
+            if (thongBaoIds.isEmpty()) return Page.empty(pageable);
+            thongBaoPage = thongBaoRepository.findByThongBaoIdInOrderByNgayTaoDesc(thongBaoIds, pageable);
+        } else if (keyword != null && !keyword.isBlank()) {
+            thongBaoPage = thongBaoRepository.findByTieuDeContainingIgnoreCaseOrderByNgayTaoDesc(keyword, pageable);
+        } else {
+            thongBaoPage = thongBaoRepository.findAllByOrderByNgayTaoDesc(pageable);
+        }
+
+        return thongBaoPage.map(tb -> {
+            long tongNguoiNhan = thongBaoNguoiDungRepository.countByThongBaoId(tb.getThongBaoId());
+            long soNguoiDaDoc = thongBaoNguoiDungRepository.countByThongBaoIdAndDaDoc(tb.getThongBaoId(), true);
+            String tenNguoiGui = nguoiDungRepository.findById(tb.getNguoiGuiId())
+                .map(NguoiDung::getHoTen).orElse("Hệ thống");
+            return AdminThongBaoResponse.builder()
+                .thongBaoId(tb.getThongBaoId())
+                .tieuDe(tb.getTieuDe())
+                .noiDung(tb.getNoiDung())
+                .loaiThongBao(tb.getLoaiThongBao())
+                .nguoiGui(tenNguoiGui)
+                .ngayTao(tb.getNgayTao())
+                .soNguoiNhan((int) tongNguoiNhan)
+                .soNguoiDaDoc((int) soNguoiDaDoc)
+                .build();
+        });
+    }
+
+    /**
+     * Admin: Xóa thông báo (kèm toàn bộ bản ghi ThongBaoNguoiDung).
+     */
+    @Transactional
+    public void xoaThongBao(Integer thongBaoId) {
+        if (!thongBaoRepository.existsById(thongBaoId)) {
+            throw new ResourceNotFoundException("Không tìm thấy thông báo");
+        }
+        thongBaoNguoiDungRepository.deleteByThongBaoId(thongBaoId);
+        thongBaoRepository.deleteById(thongBaoId);
     }
 }

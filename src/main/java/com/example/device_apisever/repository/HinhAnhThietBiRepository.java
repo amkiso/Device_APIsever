@@ -13,4 +13,5 @@ public interface HinhAnhThietBiRepository extends JpaRepository<HinhAnhThietBi, 
      * Lấy tất cả hình ảnh theo ThietBiID
      */
     List<HinhAnhThietBi> findByThietBiId(Integer thietBiId);
+    List<HinhAnhThietBi> findByBaoTriId(Integer baoTriId);
 }

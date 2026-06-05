@@ -26,14 +26,15 @@ public class ThietBiController {
 
     @GetMapping
     public ResponseEntity<?> getAll(
-            @RequestParam(required = false) Integer loaiThietBiId) {
+            @RequestParam(required = false) Integer loaiThietBiId,
+            @RequestParam(required = false) Integer khoHienTaiId) {
         if (loaiThietBiId != null) {
             // Lọc thiết bị theo loại → trả về DTO có tên kho, tên tình trạng
-            List<ThietBiByLoaiDTO> result = thietBiService.findByLoaiThietBiId(loaiThietBiId);
+            List<ThietBiByLoaiDTO> result = thietBiService.findByLoaiThietBiId(loaiThietBiId, khoHienTaiId);
             return ResponseEntity.ok(ApiResponse.ok(result));
         }
         // Lấy tất cả thiết bị (raw entity)
-        return ResponseEntity.ok(ApiResponse.ok(thietBiService.findAll()));
+        return ResponseEntity.ok(ApiResponse.ok(thietBiService.findAll(khoHienTaiId)));
     }
 
     /**
@@ -44,6 +45,15 @@ public class ThietBiController {
     public ResponseEntity<ApiResponse<ThietBiDetailResponse>> traCuuTheoMa(@PathVariable String maTaiSan) {
         ThietBiDetailResponse detail = thietBiService.findDetailByMaTaiSan(maTaiSan);
         return ResponseEntity.ok(ApiResponse.ok(detail));
+    }
+
+    /**
+     * Lấy toàn bộ thiết bị (kèm chi tiết) trong một kho
+     */
+    @GetMapping("/kho/{khoId}")
+    public ResponseEntity<ApiResponse<List<ThietBiDetailResponse>>> getDevicesByKho(@PathVariable Integer khoId) {
+        List<ThietBiDetailResponse> list = thietBiService.findDetailsByKhoHienTaiId(khoId);
+        return ResponseEntity.ok(ApiResponse.ok(list));
     }
 
     /**

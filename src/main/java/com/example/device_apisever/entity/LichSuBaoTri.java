@@ -27,8 +27,6 @@ public class LichSuBaoTri {
     @Column(name = "NguoiDungBaoTriID", nullable = false)
     private Integer nguoiDungBaoTriId;
 
-    @Column(name = "HopDongID")
-    private Integer hopDongId;
 
     @Column(name = "NgayThucHien", nullable = false)
     private LocalDateTime ngayThucHien;
@@ -50,6 +48,9 @@ public class LichSuBaoTri {
 
     @Column(name = "GhiChu", length = 500)
     private String ghiChu;
+
+    @Column(name = "NgayHoanThanh")
+    private LocalDateTime ngayHoanThanh;
 
     @PrePersist
     protected void onCreate() {
