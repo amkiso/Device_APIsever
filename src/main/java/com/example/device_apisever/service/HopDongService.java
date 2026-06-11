@@ -155,6 +155,7 @@ public class HopDongService {
                 chiTietList.add(ct);
 
                 chiTietResponses.add(HopDongResponse.ChiTietThietBiResponse.builder()
+                        .thietBiId(tb.getThietBiId())
                         .tenThietBi(ltb != null ? ltb.getTenLoaiThietBi() : "N/A")
                         .soSerial(tb.getSoSerial())
                         .tinhTrangBanGiao(tb.getTinhTrangBanGiao())
@@ -545,6 +546,7 @@ public class HopDongService {
                             ? loaiThietBiRepo.findById(tb.getLoaiThietBiId()).orElse(null) : null;
 
                     return HopDongResponse.ChiTietThietBiResponse.builder()
+                            .thietBiId(tb != null ? tb.getThietBiId() : null)
                             .tenThietBi(ltb != null ? ltb.getTenLoaiThietBi() : "N/A")
                             .soSerial(tb != null ? tb.getSoSerial() : "")
                             .tinhTrangBanGiao(ct.getTinhTrangGiao())

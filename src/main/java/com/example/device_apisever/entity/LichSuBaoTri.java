@@ -24,7 +24,7 @@ public class LichSuBaoTri {
     @Column(name = "ThietBiID", nullable = false)
     private Integer thietBiId;
 
-    @Column(name = "NguoiDungBaoTriID", nullable = false)
+    @Column(name = "NguoiDungBaoTriID")
     private Integer nguoiDungBaoTriId;
 
 

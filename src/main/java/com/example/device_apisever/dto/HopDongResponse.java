@@ -19,6 +19,7 @@ public class HopDongResponse {
 
     @Getter @Setter @NoArgsConstructor @AllArgsConstructor @Builder
     public static class ChiTietThietBiResponse {
+        private Integer thietBiId;
         private String tenThietBi;
         private String soSerial;
         private String tinhTrangBanGiao;
